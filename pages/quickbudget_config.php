@@ -82,32 +82,81 @@ function render_view(): void
 
 function handle_save(): void
 {
-    // FR-01: Save global inflation rate
-    $rate = (float)($_POST['rate'] ?? 1.0);
+    // FR-01, FR-02, FR-03, FR-05: Save inflation factor
+    include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
 
-    // TODO: Persist to database via InflationFactorRepository
+    $type = $_POST['type'] ?? 'global';
+    $rate = (float)($_POST['rate'] ?? 1.0);
+    $reference = $_POST['reference'] ?? '';
+
+    $manager = new InflationFactorManager();
+
+    switch ($type) {
+        case 'global':
+            $manager->setGlobalRate($rate);
+            break;
+        case 'category':
+            $manager->setCategoryRate($reference, $rate);
+            break;
+        case 'gl':
+            $manager->setGLRate($reference, $rate);
+            break;
+    }
+
+    // TODO: Persist via InflationFactorRepository
 
     header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'rate' => $rate]);
+    echo json_encode(['success' => true, 'type' => $type, 'rate' => $rate]);
     exit;
 }
 
 function handle_import(): void
 {
     // FR-04: Import inflation factors from CSV
-    // TODO: Implement CSV parsing and import logic
+    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'No file uploaded']);
+        exit;
+    }
+
+    $file = $_FILES['csv_file']['tmp_name'];
+    $handle = fopen($file, 'r');
+    if (!$handle) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Cannot open file']);
+        exit;
+    }
+
+    $csvRows = [];
+    $header = fgetcsv($handle);
+    while (($row = fgetcsv($handle)) !== false) {
+        $csvRows[] = array_combine($header, $row);
+    }
+    fclose($handle);
+
+    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
+    $repo = new InflationFactorRepository();
+    $count = $repo->importFromCsv($csvRows, (int)($_SESSION['company'] ?? 0));
 
     header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'imported' => 0]);
+    echo json_encode(['success' => true, 'imported' => $count]);
     exit;
 }
 
 function handle_export(): void
 {
     // FR-06: Export inflation factors to CSV
-    // TODO: Implement export logic
+    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
+    $repo = new InflationFactorRepository();
+
+    $rows = $repo->exportToCsv((int)($_SESSION['company'] ?? 0));
 
     header('Content-Type: text/csv');
-    echo "type,reference,rate\n";
+    header('Content-Disposition: attachment; filename="inflation_factors.csv"');
+
+    echo "type,reference_id,rate\n";
+    foreach ($rows as $row) {
+        echo "{$row['type']},{$row['reference']},{$row['rate']}\n";
+    }
     exit;
 }
