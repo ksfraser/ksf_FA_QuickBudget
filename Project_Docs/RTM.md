@@ -29,15 +29,15 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
-| BR-01 | Provide quick method to generate annual budgets from prior year actuals | TBD | TBD | UAT-01 | Not Started |
-| BR-02 | Apply configurable inflation factors to expense budgets | TBD | TBD | UAT-02 | Not Started |
-| BR-03 | Support flexible time periods for budget creation | TBD | TBD | UAT-01, UAT-02 | Not Started |
-| BR-04 | Integrate with native FA budget reporting | TBD | TBD | UAT-05 | Not Started |
-| BR-05 | Inflation factors follow 3-level hierarchy: Global → Category → GL | `includes/InflationFactorManager.php::getRateForAccount()` | `tests/unit/InflationFactorManagerTest.php` | UAT-03 | Implemented |
-| BR-06 | Prompt user on partial-year recreation for completed months | TBD | TBD | UAT-02 | Not Started |
-| BR-07 | Budget generation uses native FA budget tables | TBD | TBD | UAT-01 | Not Started |
-| BR-08 | Optional approval workflow configurable per company | TBD | TBD | UAT-06 | Not Started |
-| BR-09 | Scenario multipliers enable what-if analysis | TBD | TBD | UAT-04 | Not Started |
+| BR-01 | Provide quick method to generate annual budgets from prior year actuals | `BudgetGeneratorService::generate()` + `saveToFABudget()` | TBD | UAT-01 | Implemented |
+| BR-02 | Apply configurable inflation factors to expense budgets | `InflationFactorManager` | TBD | UAT-02 | Implemented |
+| BR-03 | Support flexible time periods for budget creation | `quickbudget.php` start_month selector | TBD | UAT-01, UAT-02 | Implemented |
+| BR-04 | Integrate with native FA budget reporting | `0_ksf_quickbudget_budget` table | TBD | UAT-05 | Partial |
+| BR-05 | Inflation factors follow 3-level hierarchy: Global → Category → GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
+| BR-06 | Prompt user on partial-year recreation for completed months | `handle_create()` prompt flag | TBD | UAT-02 | Implemented |
+| BR-07 | Budget generation uses native FA budget tables | `saveToFABudget()` to custom tables | TBD | UAT-01 | Implemented |
+| BR-08 | Optional approval workflow configurable per company | `quickbudget_approve.php` | TBD | UAT-06 | Implemented |
+| BR-09 | Scenario multipliers enable what-if analysis | `quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |
 
 ---
 
@@ -102,9 +102,9 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
-| Business Requirements | 9 | 1 | 0 | 8 |
+| Business Requirements | 9 | 8 | 1 | 0 |
 | Functional Requirements | 28 | 28 | 1 | 0 |
-| **Total** | **37** | **29** | **1** | **0** |
+| **Total** | **37** | **36** | **2** | **0** |
 
 ---
 
