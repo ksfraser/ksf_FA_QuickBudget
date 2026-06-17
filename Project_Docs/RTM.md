@@ -103,8 +103,8 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
 | Business Requirements | 9 | 1 | 0 | 8 |
-| Functional Requirements | 28 | 19 | 1 | 8 |
-| **Total** | **37** | **20** | **1** | **8** |
+| Functional Requirements | 28 | 24 | 1 | 3 |
+| **Total** | **37** | **25** | **1** | **3** |
 
 ---
 

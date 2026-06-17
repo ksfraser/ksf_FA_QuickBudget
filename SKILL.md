@@ -142,7 +142,7 @@ $service = FA_QuickBudget_Module::instance()->getBudgetService();
 
 ## DB / SQL Patterns
 
-- Tables: `0_ksf_quickbudget_factors`, `0_ksf_quickbudget_scenarios`
+- Tables: `0_ksf_quickbudget_factors`, `0_ksf_quickbudget_scenarios`, `0_ksf_quickbudget_budget`, `0_ksf_quickbudget_approvals`
 - `db_query($sql, 'Error message')` — second arg is error context; pass `null` to suppress display_db_error exit
 - `TB_PREF` — table prefix constant (usually empty string in modern FA)
 

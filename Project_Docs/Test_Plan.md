@@ -48,8 +48,6 @@
 
 | Req ID | Gap Description |
 |--------|-----------------|
-| FR-19 | Color-coding CSS not implemented |
-| FR-20-24 | Approval workflow not implemented |
 | FR-25-28 | CSV export formatting not implemented |
 
 ---
