@@ -78,8 +78,8 @@ final class BudgetGeneratorService
 
         $count = 0;
         foreach ($entries as $entry) {
-            for ($month = 1; $month <= 12; $month++) {
-                $amount = $entry->getMonthlyAmount($month);
+            $monthlyAmounts = $entry->getMonthlyAmounts();
+            foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
                     $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_budget
                         (gl_account, year, month, amount, company) VALUES (" .
