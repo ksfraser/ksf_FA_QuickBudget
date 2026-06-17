@@ -65,6 +65,40 @@ final class BudgetGeneratorService
     }
 
     /**
+     * Save budget entries to FA budget tables.
+     *
+     * @param array<BudgetEntryDTO> $entries
+     * @param int $company Company ID
+     * @return int Number of entries saved
+     * @see FR-14
+     */
+    public function saveToFABudget(array $entries, int $company = 0): int
+    {
+        global $db;
+
+        $count = 0;
+        foreach ($entries as $entry) {
+            for ($month = 1; $month <= 12; $month++) {
+                $amount = $entry->getMonthlyAmount($month);
+                if ($amount != 0.0) {
+                    $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_budget
+                        (gl_account, year, month, amount, company) VALUES (" .
+                        "'" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "', " .
+                        (int)$entry->getYear() . ", " .
+                        (int)$month . ", " .
+                        (float)$amount . ", " .
+                        (int)$company . ")";
+                    if (db_query($sql, null)) {
+                        $count++;
+                    }
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    /**
      * Get GL accounts that have actuals in the specified year.
      *
      * @param int $year

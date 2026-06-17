@@ -118,11 +118,11 @@ function install_options($app)
         $updates = array();
 
         if (file_exists(dirname(__FILE__) . '/sql/install.sql')) {
-            $updates['install.sql'] = array('ksf_quickbudget_factors');
+            $updates['install.sql'] = array('ksf_quickbudget_budget');
         }
 
         if (file_exists(dirname(__FILE__) . '/sql/update.sql')) {
-            $updates['update.sql'] = array('ksf_quickbudget_factors');
+            $updates['update.sql'] = array('ksf_quickbudget_budget');
         }
 
         if (!empty($updates)) {

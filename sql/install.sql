@@ -30,3 +30,17 @@ VALUES
     ('Baseline', 1.0000, 'Standard budget projection', 0),
     ('Optimistic', 0.9000, '10% below calculated amounts', 0),
     ('Pessimistic', 1.1000, '10% above calculated amounts', 0);
+
+-- Budget entries for FR-14
+CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_budget` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `gl_account` varchar(15) NOT NULL,
+    `year` int(11) NOT NULL,
+    `month` int(11) NOT NULL,
+    `amount` decimal(16,2) NOT NULL DEFAULT '0.00',
+    `scenario` varchar(32) NOT NULL DEFAULT 'baseline',
+    `company` int(11) NOT NULL DEFAULT '0',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_budget` (`gl_account`,`year`,`month`,`scenario`,`company`),
+    KEY `idx_account_year` (`gl_account`,`year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

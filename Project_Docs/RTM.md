@@ -65,7 +65,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
 | FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php` form prompt | TBD | UAT-02 | Not Started |
 | FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |
-| FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService` TODO | TBD | UAT-01 | Not Started |
+| FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
 
 ### FR-15–FR-19: Budget Comparison
 
@@ -103,8 +103,8 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
 | Business Requirements | 9 | 1 | 0 | 8 |
-| Functional Requirements | 28 | 17 | 1 | 10 |
-| **Total** | **37** | **18** | **1** | **10** |
+| Functional Requirements | 28 | 18 | 1 | 9 |
+| **Total** | **37** | **19** | **1** | **9** |
 
 ---
 

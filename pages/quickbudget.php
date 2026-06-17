@@ -122,10 +122,12 @@ function handle_create(): void
 
     $entries = $service->generate($targetYear, $startMonth);
 
-    // FR-14: Save to FA budget tables (placeholder - to be implemented)
+    // FR-14: Save to FA budget tables
+    $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0));
+
     $result = array(
         'success' => true,
-        'message' => 'Budget generated for ' . count($entries) . ' GL accounts',
+        'message' => 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries',
         'year' => $targetYear
     );
 
