@@ -48,7 +48,7 @@
 
 | Req ID | Gap Description |
 |--------|-----------------|
-| FR-25-28 | CSV export formatting not implemented |
+| FR-10 | GL accounts with no actuals need better handling in export |
 
 ---
 

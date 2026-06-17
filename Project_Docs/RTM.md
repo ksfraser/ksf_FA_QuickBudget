@@ -91,10 +91,10 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
-| FR-25 | Export budget data to CSV | `pages/quickbudget.php` | TBD | UAT-07 | Implemented |
-| FR-26 | Export comparison report to CSV | `pages/quickbudget_compare.php` | TBD | UAT-07 | Implemented |
-| FR-27 | Include all 12 months of budget data | `pages/quickbudget.php` | TBD | UAT-07 | Implemented |
-| FR-28 | Include variance columns in export | `pages/quickbudget_compare.php` | TBD | UAT-07 | Implemented |
+| FR-25 | Export budget data to CSV | `pages/quickbudget.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-26 | Export comparison report to CSV | `pages/quickbudget_compare.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-27 | Include all 12 months of budget data | `pages/quickbudget.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-28 | Include variance columns in export | `pages/quickbudget_compare.php::handle_export()` | TBD | UAT-07 | Implemented |
 
 ---
 
@@ -103,8 +103,8 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
 | Business Requirements | 9 | 1 | 0 | 8 |
-| Functional Requirements | 28 | 24 | 1 | 3 |
-| **Total** | **37** | **25** | **1** | **3** |
+| Functional Requirements | 28 | 28 | 1 | 0 |
+| **Total** | **37** | **29** | **1** | **0** |
 
 ---
 

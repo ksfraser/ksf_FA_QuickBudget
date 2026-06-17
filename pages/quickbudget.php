@@ -41,6 +41,9 @@ switch ($page) {
     case 'create':
         handle_create();
         break;
+    case 'export':
+        handle_export();
+        break;
     case 'compare':
         handle_compare();
         break;
@@ -191,5 +194,44 @@ function handle_compare(): void
 {
     header('Content-Type: application/json');
     echo json_encode(array('error' => 'Not implemented'));
+    exit;
+}
+
+function handle_export(): void
+{
+    // FR-25, FR-27: Export budget data to CSV with all 12 months
+    global $db;
+
+    $year = (int)($_GET['year'] ?? date('Y'));
+
+    $sql = "SELECT gl_account, year, month, amount
+        FROM " . TB_PREF . "ksf_quickbudget_budget
+        WHERE year = " . (int)$year . "
+        ORDER BY gl_account, month";
+    $result = db_query($sql, null);
+
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="budget_' . $year . '.csv"');
+
+    echo "GL Account,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\n";
+
+    $currentAccount = null;
+    $months = array_fill(1, 12, 0);
+
+    while ($row = db_fetch_assoc($result)) {
+        if ($row['gl_account'] !== $currentAccount) {
+            if ($currentAccount !== null) {
+                echo $currentAccount . "," . implode(',', $months) . "\n";
+            }
+            $currentAccount = $row['gl_account'];
+            $months = array_fill(1, 12, 0);
+        }
+        $months[(int)$row['month']] = $row['amount'];
+    }
+
+    if ($currentAccount !== null) {
+        echo $currentAccount . "," . implode(',', $months) . "\n";
+    }
+
     exit;
 }
