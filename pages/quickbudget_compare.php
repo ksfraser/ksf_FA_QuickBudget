@@ -56,6 +56,11 @@ function render_view(): void
 
     page(_("Budget Comparison"), false, false, '', '');
 
+    echo "<style>
+    .variance-positive { background-color: #d4edda; }
+    .variance-negative { background-color: #f8d7da; }
+    </style>";
+
     echo "<div class='card'>";
     echo "<h3>" . _("Actuals vs Budget Comparison") . "</h3>";
 

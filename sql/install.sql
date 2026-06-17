@@ -44,3 +44,14 @@ CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_budget` (
     UNIQUE KEY `unique_budget` (`gl_account`,`year`,`month`,`scenario`,`company`),
     KEY `idx_account_year` (`gl_account`,`year`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Budget approvals for FR-20-24
+CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_approvals` (
+    `budget_id` int(11) NOT NULL,
+    `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    `approved_by` int(11) DEFAULT NULL,
+    `approved_at` datetime DEFAULT NULL,
+    `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`budget_id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

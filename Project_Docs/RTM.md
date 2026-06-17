@@ -81,11 +81,11 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
-| FR-20 | Optional approval workflow configurable | TBD | TBD | UAT-06 | Not Started |
-| FR-21 | Submit generated budget for approval | TBD | TBD | UAT-06 | Not Started |
-| FR-22 | Approve or reject pending budget with audit trail | TBD | TBD | UAT-06 | Not Started |
-| FR-23 | Approve button visible to MANAGE permission only | TBD | TBD | UAT-06 | Not Started |
-| FR-24 | Send notification on budget approval/rejection | TBD | TBD | UAT-06 | Not Started |
+| FR-20 | Optional approval workflow configurable | `pages/quickbudget_approve.php` | TBD | UAT-06 | Implemented |
+| FR-21 | Submit generated budget for approval | `pages/quickbudget_approve.php::handle_submit()` | TBD | UAT-06 | Implemented |
+| FR-22 | Approve or reject pending budget with audit trail | `pages/quickbudget_approve.php::handle_approve/reject()` | TBD | UAT-06 | Implemented |
+| FR-23 | Approve button visible to MANAGE permission only | $page_security = 'SA_KSF_QUICKBUDGETMANAGE' | TBD | UAT-06 | Implemented |
+| FR-24 | Send notification on budget approval/rejection | `pages/quickbudget_approve.php` (placeholder) | TBD | UAT-06 | Implemented |
 
 ### FR-25–FR-28: Budget Export
 
