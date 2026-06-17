@@ -96,11 +96,22 @@ function handle_create(): void
 {
     global $db, $path_to_root;
 
-    // FR-11: Validate source period
     $targetYear = (int)($_POST['target_year'] ?? date('Y') + 1);
     $startMonth = (int)($_POST['start_month'] ?? 1);
 
-    // TODO: Validate actuals exist for source year
+    // FR-11: Validate source period has completed actuals
+    $sourceYear = $targetYear - 1;
+    $completedMonths = get_completed_months_for_year($sourceYear);
+    if ($completedMonths < $startMonth - 1) {
+        $message = sprintf(
+            _("Cannot generate budget: source year has only %d completed months, need %d"),
+            $completedMonths,
+            $startMonth - 1
+        );
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $message]);
+        exit;
+    }
 
     // FR-09: Generate budget
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
@@ -111,7 +122,7 @@ function handle_create(): void
 
     $entries = $service->generate($targetYear, $startMonth);
 
-    // FR-14: Save to FA budget tables (placeholder)
+    // FR-14: Save to FA budget tables (placeholder - to be implemented)
     $result = array(
         'success' => true,
         'message' => 'Budget generated for ' . count($entries) . ' GL accounts',
@@ -121,6 +132,30 @@ function handle_create(): void
     header('Content-Type: application/json');
     echo json_encode($result);
     exit;
+}
+
+/**
+ * Get count of months with completed actuals for a year.
+ * FR-11 support: validate source period.
+ */
+function get_completed_months_for_year(int $year): int
+{
+    global $db;
+
+    $currentYear = (int)date('Y');
+    $currentMonth = (int)date('m');
+
+    if ($year > $currentYear) {
+        return 0; // Future year, no actuals yet
+    }
+
+    $sql = "SELECT COUNT(DISTINCT MONTH(tran_date)) as months
+        FROM " . TB_PREF . "gl_trans
+        WHERE YEAR(tran_date) = " . (int)$year . " AND tran_date <= LAST_DAY(CONCAT('$year-', LPAD($currentMonth, 2, '0'), '-01'))";
+    $result = db_query($sql, null);
+    $row = db_fetch_assoc($result);
+
+    return $row ? (int)$row['months'] : 0;
 }
 
 function handle_compare(): void
