@@ -25,7 +25,7 @@
 // ---------------------------------------------------------------------------
 // Shift value: pick a unique number not used by other modules.
 // Range: 100-200 for KSF modules (below 100 reserved by FA core).
-define('SS_ksf_FA_ksf_QuickBudget', 104 << 8);
+define('SS_ksf_FA_QuickBudget', 104 << 8);
 
 // ---------------------------------------------------------------------------
 // Ensure Composer autoloader is loaded before the class definition so that
@@ -41,13 +41,13 @@ if (file_exists($moduleAutoload)) {
 // 2. Main hooks class
 // ---------------------------------------------------------------------------
 
-class hooks_ksf_FA_ksf_QuickBudget extends hooks
+class hooks_ksf_FA_QuickBudget extends hooks
 {
     // Provides ksf_get_value(), ksf_get_values(), ksf_set_value()
     // via Ksfraser\Traits\HookQueryProviderTrait (ksfraser/traits ^1.2)
     use \Ksfraser\Traits\HookQueryProviderTrait;
 
-    var $module_name = 'ksf_FA_ksf_QuickBudget';
+    var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
 
     // =======================================================================
@@ -71,16 +71,16 @@ class hooks_ksf_FA_ksf_QuickBudget extends hooks
     // Use switch($app->id) to target existing apps ('CRM', 'HR', 'Projects',
     // 'GL', 'AP', 'AR', 'Stock', 'Manufacturing', 'System', etc.).
     // =======================================================================
-    function install_options($app)
+function install_options($app)
     {
         global $path_to_root;
 
         switch ($app->id) {
              case 'GL':
-                 $app->add_lapp_function(2, _("Quick Budget"),
-                     $path_to_root . "/modules/" . $this->module_name . "/page.php",
-                     'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
-                 break;
+                  $app->add_lapp_function(2, _("Quick Budget"),
+                      $path_to_root . "/modules/" . $this->module_name . "/quickbudget.php",
+                      'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
+                  break;
         }
     }
 
@@ -93,14 +93,14 @@ class hooks_ksf_FA_ksf_QuickBudget extends hooks
     // =======================================================================
     function install_access()
     {
-        $security_sections[SS_ksf_FA_ksf_QuickBudget] = _("Quick Budget");
+        $security_sections[SS_ksf_FA_QuickBudget] = _("Quick Budget");
 
         $security_areas['SA_KSF_QUICKBUDGETVIEW'] = array(
-            SS_ksf_FA_ksf_QuickBudget | 1,
+            SS_ksf_FA_QuickBudget | 1,
             _("View Quick Budget")
         );
         $security_areas['SA_KSF_QUICKBUDGETMANAGE'] = array(
-            SS_ksf_FA_ksf_QuickBudget | 2,
+            SS_ksf_FA_QuickBudget | 2,
             _("Manage Quick Budget")
         );
 
@@ -118,11 +118,11 @@ class hooks_ksf_FA_ksf_QuickBudget extends hooks
         $updates = array();
 
         if (file_exists(dirname(__FILE__) . '/sql/install.sql')) {
-            $updates['install.sql'] = array($this->module_name);
+            $updates['install.sql'] = array('ksf_quickbudget_factors');
         }
 
         if (file_exists(dirname(__FILE__) . '/sql/update.sql')) {
-            $updates['update.sql'] = array($this->module_name);
+            $updates['update.sql'] = array('ksf_quickbudget_factors');
         }
 
         if (!empty($updates)) {
