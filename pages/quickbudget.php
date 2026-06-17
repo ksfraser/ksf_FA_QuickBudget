@@ -113,6 +113,18 @@ function handle_create(): void
         exit;
     }
 
+    // FR-12: Check for existing budget - prompt if exists for months before startMonth
+    $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
+    if ($existingCount > 0 && $startMonth > 1) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'prompt' => true,
+            'message' => sprintf(_("Budget already exists for %d months. Overwrite?"), $existingCount)
+        ]);
+        exit;
+    }
+
     // FR-09: Generate budget
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
     include_once(__DIR__ . '/../src/Service/BudgetGeneratorService.php');
@@ -134,6 +146,21 @@ function handle_create(): void
     header('Content-Type: application/json');
     echo json_encode($result);
     exit;
+}
+
+/**
+ * FR-12: Get count of existing budget entries for a year/month range
+ */
+function get_existing_budget_count(int $year, int $fromMonth = 1): int
+{
+    global $db;
+
+    $sql = "SELECT COUNT(*) as cnt FROM " . TB_PREF . "ksf_quickbudget_budget
+        WHERE year = " . (int)$year . " AND month >= " . (int)$fromMonth;
+    $result = db_query($sql, null);
+    $row = db_fetch_assoc($result);
+
+    return $row ? (int)$row['cnt'] : 0;
 }
 
 /**

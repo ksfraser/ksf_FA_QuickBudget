@@ -63,7 +63,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-09 | Calculate budget amounts applying inflation factors to GL actuals | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
 | FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::generate()` skips empty results | TBD | UAT-01 | Partial |
 | FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
-| FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php` form prompt | TBD | UAT-02 | Not Started |
+| FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
 | FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |
 | FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
 
@@ -103,8 +103,8 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
 | Business Requirements | 9 | 1 | 0 | 8 |
-| Functional Requirements | 28 | 18 | 1 | 9 |
-| **Total** | **37** | **19** | **1** | **9** |
+| Functional Requirements | 28 | 19 | 1 | 8 |
+| **Total** | **37** | **20** | **1** | **8** |
 
 ---
 
