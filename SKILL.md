@@ -88,10 +88,9 @@ The `hooks_ksf_FA_QuickBudget` class (extends `hooks`) defines hook methods. The
 
 ### Hook Methods (convention)
 Named by operation, called by `hook_invoke_first`:
-- `quickbudget_entry_create(&$data, $opts = [])` → calls `FA_QuickBudget_Module::instance()->create_entry($data)`
-- `quickbudget_entry_update(&$data, $opts = [])` → calls `FA_QuickBudget_Module::instance()->update_entry($id, $data)`
-- `quickbudget_entry_delete(&$data, $opts = [])` → calls `FA_QuickBudget_Module::instance()->delete_entry($id)`
-- `quickbudget_entries_query(&$data, $opts = [])` → calls `FA_QuickBudget_Module::instance()->get_entries()`
+- `quickbudget_budget_generate(&$data, $opts = [])` → budget generation
+- `quickbudget_budget_compare(&$data, $opts = [])` → comparison query
+- `quickbudget_factor_import(&$data, $opts = [])` → CSV import
 - Return null = "not handled" (hook_invoke_first continues), non-null = stops iteration
 
 ### Hook Callback Convention
@@ -118,9 +117,9 @@ $result = $controller->create($data);
 ```
 
 ### EventController methods
-- `create(array $data): array` — sanitizes, validates, creates entry, reconciles invitees
-- `update(int $id, array $data): array` — permission check, edit-scope handling
-- `delete(int $id): array` — full delete
+- `create(array $data): array` — sanitizes, validates, generates budget
+- `update(int $id, array $data): array` — permission check, update budget
+- `delete(int $id): array` — delete budget entry
 
 ## Permission Model
 
@@ -169,6 +168,4 @@ $resp = $this->execCurl('POST', '/index.php',
 1. **Buffer ordering**: session.inc calls `ob_start('output_html')` (level 2). For AJAX, discard this inner buffer BEFORE returning JSON, or warnings/notices will be rendered as HTML and corrupt the response.
 2. **PHP 7.4**: target FA container runs 7.4 — no match expressions, no readonly properties, `: mixed` return type only from PHP 8.0
 3. **`db_query` error message**: passing a non-null second arg triggers `display_db_error()` which calls `exit` with HTML output. Pass `null` to get `false` return on failure.
-4. **`hook_invoke_first` vs direct module call**: hooks allow other modules to intercept operations. `EventController.create()` calls `$module->create_entry()` directly (not via hook), while `EventController.update()`/`delete()` use `invokeHook()` which CAN use `hook_invoke_first` if a hookInvoker is provided.
-5. **Double-conversion bug**: `convertAllDay()` converts bool → 'yes'/'no'. If called on already-converted data, `'no' ? 'yes' : 'no'` → `'yes'` (all non-all-day events become all-day). Always convert once before any validation/save.
-6. **Reconciliation key presence**: the inline update handler reconciles invitees when the `invitees`/`invitees_json` key is present (even empty array). EventController's handlers check `$reconcileInvitees` flag (passed from `update()`) to match this behavior.
+4. **`hook_invoke_first` vs direct module call**: hooks allow other modules to intercept operations. Use hooks for inter-module integration.
