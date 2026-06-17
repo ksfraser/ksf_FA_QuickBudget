@@ -159,10 +159,10 @@ $resp = $this->execCurl('POST', '/index.php',
 
 ## Namespace / Class Loader
 
-- Composer autoloader booted from `hooks.php` and `FA_Cal_Module.php` via `require_once __DIR__ . '/vendor/autoload.php'`
-- Module class: `FA_QuickBudget_Module` (alias `FA_Cal_Module`)
+- Composer autoloader booted from `hooks.php` and `FA_QuickBudget_Module.php` via `require_once __DIR__ . '/vendor/autoload.php'`
+- Module class: `FA_QuickBudget_Module`
 - Namespaces: `Ksfraser\FA\QuickBudget\Controller`, `Ksfraser\FA\QuickBudget\View`, `Ksfraser\FA\QuickBudget\Support`
-- Third-party: `KsfCommon\ContactType\ContactTypeRegistry`
+- Third-party: `Ksfraser\Traits\HookQueryProviderTrait`, `Ksfraser\Traits\CrudEventEmitterTrait`
 
 ## Key "Gotchas"
 
