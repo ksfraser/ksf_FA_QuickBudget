@@ -27,10 +27,44 @@
 // Range: 100-200 for KSF modules (below 100 reserved by FA core).
 define('SS_ksf_FA_QuickBudget', 104 << 8);
 
-// Ensure autoloader is available for traits
-$moduleAutoload = dirname(__FILE__) . '/vendor/autoload.php';
+// Ensure composer dependencies before loading trait
+$moduleDir = dirname(__FILE__);
+require_once $moduleDir . '/includes/ComposerDependencies.php';
+ComposerDependencies::ensure($moduleDir);
+
+// Load autoloader for trait
+$moduleAutoload = $moduleDir . '/vendor/autoload.php';
 if (file_exists($moduleAutoload)) {
     require_once $moduleAutoload;
+}
+
+// Define fallback trait if ksfraser/traits not available
+if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
+    trait HookQueryProviderTrait
+    {
+        public function ksf_get_value(&$key, $opts = null)
+        {
+            $values = $this->_getAdvertisedValues();
+            return $values[$key] ?? null;
+        }
+
+        public function ksf_get_values(&$keys, $opts = null)
+        {
+            $values = $this->_getAdvertisedValues();
+            $result = [];
+            foreach ($keys as $key) {
+                if (isset($values[$key])) {
+                    $result[$key] = $values[$key];
+                }
+            }
+            return $result;
+        }
+
+        public function ksf_set_value(&$data, $opts = null)
+        {
+            return null;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -39,9 +73,8 @@ if (file_exists($moduleAutoload)) {
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
-    // Provides ksf_get_value(), ksf_get_values(), ksf_set_value() via trait
-    // Safe fallback implemented below if trait unavailable
-    use \Ksfraser\Traits\HookQueryProviderTrait;
+    // Provides ksf_get_value(), ksf_get_values(), ksf_set_value()
+    use HookQueryProviderTrait;
 
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
