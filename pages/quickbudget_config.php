@@ -84,26 +84,37 @@ function handle_save(): void
 {
     // FR-01, FR-02, FR-03, FR-05: Save inflation factor
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
+    include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
+    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
 
     $type = $_POST['type'] ?? 'global';
     $rate = (float)($_POST['rate'] ?? 1.0);
     $reference = $_POST['reference'] ?? '';
+    $company = (int)($_SESSION['company'] ?? 0);
 
     $manager = new InflationFactorManager();
+    $repo = new InflationFactorRepository();
 
     switch ($type) {
         case 'global':
             $manager->setGlobalRate($rate);
+            $factor = new InflationFactorDTO($type, '', $rate, $company);
             break;
         case 'category':
             $manager->setCategoryRate($reference, $rate);
+            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
             break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
+            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
             break;
+        default:
+            $factor = null;
     }
 
-    // TODO: Persist via InflationFactorRepository
+    if ($factor) {
+        $repo->save($factor);
+    }
 
     header('Content-Type: application/json');
     echo json_encode(['success' => true, 'type' => $type, 'rate' => $rate]);
@@ -113,6 +124,9 @@ function handle_save(): void
 function handle_import(): void
 {
     // FR-04: Import inflation factors from CSV
+    include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
+    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
+
     if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'No file uploaded']);
@@ -134,7 +148,6 @@ function handle_import(): void
     }
     fclose($handle);
 
-    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
     $repo = new InflationFactorRepository();
     $count = $repo->importFromCsv($csvRows, (int)($_SESSION['company'] ?? 0));
 

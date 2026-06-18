@@ -21,6 +21,36 @@ final class InflationFactorManager
     private $glRates = [];
 
     /**
+     * Load rates from database for a company.
+     *
+     * @param int $company Company ID
+     * @return void
+     */
+    public function loadFromDB(int $company = 0): void
+    {
+        global $db;
+
+        $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
+            WHERE company = " . (int)$company;
+        $result = db_query($sql, null);
+
+        while ($row = db_fetch_assoc($result)) {
+            $rate = (float)$row['rate'];
+            switch ($row['factor_type']) {
+                case 'global':
+                    $this->globalRate = $rate;
+                    break;
+                case 'category':
+                    $this->categoryRates[$row['reference_id']] = $rate;
+                    break;
+                case 'gl':
+                    $this->glRates[$row['reference_id']] = $rate;
+                    break;
+            }
+        }
+    }
+
+    /**
      * Set the global default inflation rate.
      *
      * @param float $rate Rate multiplier (e.g., 1.0350)

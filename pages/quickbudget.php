@@ -101,6 +101,7 @@ function handle_create(): void
 
     $targetYear = (int)($_POST['target_year'] ?? date('Y') + 1);
     $startMonth = (int)($_POST['start_month'] ?? 1);
+    $scenarioId = (int)($_POST['scenario_id'] ?? 0);
 
     // FR-11: Validate source period has completed actuals
     $sourceYear = $targetYear - 1;
@@ -133,12 +134,14 @@ function handle_create(): void
     include_once(__DIR__ . '/../src/Service/BudgetGeneratorService.php');
 
     $manager = new InflationFactorManager();
+    $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
+
     $service = new \Ksfraser\FA\QuickBudget\Service\BudgetGeneratorService($manager);
 
-    $entries = $service->generate($targetYear, $startMonth);
+    $entries = $service->generate($targetYear, $startMonth, $scenarioId);
 
-    // FR-14: Save to FA budget tables
-    $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0));
+    // FR-14: Save to FA native budget tables
+    $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
 
     $result = array(
         'success' => true,
@@ -152,14 +155,14 @@ function handle_create(): void
 }
 
 /**
- * FR-12: Get count of existing budget entries for a year/month range
+ * FR-12: Get count of existing budget entries for a year/month range from native FA tables
  */
 function get_existing_budget_count(int $year, int $fromMonth = 1): int
 {
     global $db;
 
-    $sql = "SELECT COUNT(*) as cnt FROM " . TB_PREF . "ksf_quickbudget_budget
-        WHERE year = " . (int)$year . " AND month >= " . (int)$fromMonth;
+    $sql = "SELECT COUNT(*) as cnt FROM " . TB_PREF . "budget_trans
+        WHERE YEAR(tran_date) = " . (int)$year . " AND MONTH(tran_date) >= " . (int)$fromMonth;
     $result = db_query($sql, null);
     $row = db_fetch_assoc($result);
 
@@ -199,14 +202,15 @@ function handle_compare(): void
 
 function handle_export(): void
 {
-    // FR-25, FR-27: Export budget data to CSV with all 12 months
+    // FR-25, FR-27: Export budget data to CSV with all 12 months from native FA tables
     global $db;
 
     $year = (int)($_GET['year'] ?? date('Y'));
 
-    $sql = "SELECT gl_account, year, month, amount
-        FROM " . TB_PREF . "ksf_quickbudget_budget
-        WHERE year = " . (int)$year . "
+    $sql = "SELECT account as gl_account, MONTH(tran_date) as month, SUM(amount) as amount
+        FROM " . TB_PREF . "budget_trans
+        WHERE YEAR(tran_date) = " . (int)$year . "
+        GROUP BY account, MONTH(tran_date)
         ORDER BY gl_account, month";
     $result = db_query($sql, null);
 

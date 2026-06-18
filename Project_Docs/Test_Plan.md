@@ -48,7 +48,7 @@
 
 | Req ID | Gap Description |
 |--------|-----------------|
-| FR-10 | GL accounts with no actuals need better handling in export |
+| FR-24 | Notification implementation pending (email/hooks based) |
 
 ---
 

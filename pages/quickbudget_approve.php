@@ -60,21 +60,22 @@ function render_view(): void
     echo "<div class='card'>";
     echo "<h3>" . _("Pending Budget Approvals") . "</h3>";
 
-    // FR-21: List pending budgets
-    $pending = get_pending_budgets();
+    // FR-21: List pending budgets from FA native budget_trans
+    $year = (int)date('Y');
+    $pending = get_pending_budgets($year);
     if (empty($pending)) {
         echo "<p>" . _("No pending budgets") . "</p>";
     } else {
         echo "<table class='table'>";
-        echo "<tr><th>" . _("Year") . "</th><th>" . _("GL Account") . "</th><th>" . _("Amount") . "</th><th>" . _("Action") . "</th></tr>";
+        echo "<tr><th>" . _("Date") . "</th><th>" . _("GL Account") . "</th><th>" . _("Amount") . "</th><th>" . _("Action") . "</th></tr>";
         foreach ($pending as $budget) {
             echo "<tr>";
-            echo "<td>{$budget['year']}</td>";
+            echo "<td>{$budget['tran_date']}</td>";
             echo "<td>{$budget['gl_account']}</td>";
             echo "<td>" . number_format($budget['amount'], 2) . "</td>";
             echo "<td>";
-            echo "<button onclick='approveBudget({$budget['id']})' class='btn btn-success'>" . _("Approve") . "</button>";
-            echo "<button onclick='rejectBudget({$budget['id']})' class='btn btn-danger'>" . _("Reject") . "</button>";
+            echo "<button onclick='approveBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-success'>" . _("Approve") . "</button>";
+            echo "<button onclick='rejectBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-danger'>" . _("Reject") . "</button>";
             echo "</td>";
             echo "</tr>";
         }
@@ -99,13 +100,16 @@ function handle_submit(): void
 function handle_approve(): void
 {
     // FR-22: Approve budget with audit trail
-    $budgetId = (int)($_POST['budget_id'] ?? 0);
+    global $db;
+    $tranDate = $_POST['tran_date'] ?? '';
+    $glAccount = $_POST['gl_account'] ?? '';
 
     $sql = "UPDATE " . TB_PREF . "ksf_quickbudget_approvals
         SET status = 'approved', approved_by = " . (int)($_SESSION['wa_current_user']->user ?? 0) . ",
-            approved_at = NOW() WHERE budget_id = " . (int)$budgetId;
+            approved_at = NOW() 
+        WHERE tran_date = '" . mysqli_real_escape_string($db, $tranDate) . "'
+        AND gl_account = '" . mysqli_real_escape_string($db, $glAccount) . "'";
 
-    // FR-24: Send notification (placeholder)
     db_query($sql, null);
 
     header('Content-Type: application/json');
@@ -116,11 +120,15 @@ function handle_approve(): void
 function handle_reject(): void
 {
     // FR-22: Reject budget with audit trail
-    $budgetId = (int)($_POST['budget_id'] ?? 0);
+    global $db;
+    $tranDate = $_POST['tran_date'] ?? '';
+    $glAccount = $_POST['gl_account'] ?? '';
 
     $sql = "UPDATE " . TB_PREF . "ksf_quickbudget_approvals
         SET status = 'rejected', approved_by = " . (int)($_SESSION['wa_current_user']->user ?? 0) . ",
-            approved_at = NOW() WHERE budget_id = " . (int)$budgetId;
+            approved_at = NOW()
+        WHERE tran_date = '" . mysqli_real_escape_string($db, $tranDate) . "'
+        AND gl_account = '" . mysqli_real_escape_string($db, $glAccount) . "'";
 
     db_query($sql, null);
 
@@ -129,14 +137,15 @@ function handle_reject(): void
     exit;
 }
 
-function get_pending_budgets(): array
+function get_pending_budgets(int $year): array
 {
-    global $db;
-
-    $sql = "SELECT b.id, b.gl_account, b.year, b.amount
-        FROM " . TB_PREF . "ksf_quickbudget_budget b
-        LEFT JOIN " . TB_PREF . "ksf_quickbudget_approvals a ON b.id = a.budget_id
-        WHERE a.status IS NULL OR a.status = 'pending'";
+    // Query FA native budget_trans table for pending approvals
+    $sql = "SELECT bt.tran_date, bt.account as gl_account, bt.amount
+        FROM " . TB_PREF . "budget_trans bt
+        LEFT JOIN " . TB_PREF . "ksf_quickbudget_approvals qa 
+            ON bt.tran_date = qa.tran_date AND bt.account = qa.gl_account
+        WHERE YEAR(bt.tran_date) = " . (int)$year . "
+        AND (qa.status IS NULL OR qa.status = 'pending')";
     $result = db_query($sql, null);
 
     $pending = [];

@@ -43,12 +43,51 @@ if (file_exists($moduleAutoload)) {
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
-    // Provides ksf_get_value(), ksf_get_values(), ksf_set_value()
-    // via Ksfraser\Traits\HookQueryProviderTrait (ksfraser/traits ^1.2)
-    use \Ksfraser\Traits\HookQueryProviderTrait;
-
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
+
+    // KSF Query Hook System — implements ksf_get_value, ksf_get_values, ksf_set_value
+    // via trait if available, otherwise provides minimal fallback
+    public function ksf_get_value(&$key, $opts = null)
+    {
+        return $this->_ksf_get_value($key, $opts);
+    }
+
+    public function ksf_get_values(&$keys, $opts = null)
+    {
+        return $this->_ksf_get_values($keys, $opts);
+    }
+
+    public function ksf_set_value(&$data, $opts = null)
+    {
+        return $this->_ksf_set_value($data, $opts);
+    }
+
+    // Fallback implementations when trait not available
+    protected function _ksf_get_value(&$key, $opts = null)
+    {
+        if ($key === 'quickbudget.version') {
+            return $this->version;
+        }
+        return null;
+    }
+
+    protected function _ksf_get_values(&$keys, $opts = null)
+    {
+        $result = [];
+        foreach ($keys as $key) {
+            $value = $this->_ksf_get_value($key, $opts);
+            if ($value !== null) {
+                $result[$key] = $value;
+            }
+        }
+        return $result;
+    }
+
+    protected function _ksf_set_value(&$data, $opts = null)
+    {
+        return null; // No-op by default
+    }
 
     // =======================================================================
     // 2a. install_tabs — Add a new top-level FA application tab
@@ -132,73 +171,11 @@ function install_options($app)
         return true;
     }
 
-    // =======================================================================
-    // 3. KSF QUERY HOOK SYSTEM + CRUD EVENT LISTENER STUBS
-    //
-    // Provided by Ksfraser\Traits\HookQueryProviderTrait (see the `use` statement
-    // at the top of this class). The trait implements the standard FA hook
-    // methods for inter-module value queries:
-    //
-    //   ksf_get_value(&$key, $opts = null)   — responds to single-value queries
-    //   ksf_get_values(&$keys, $opts = null)  — responds to multi-value queries
-    //   ksf_set_value(&$data, $opts = null)   — receives pushed values (no-op by default)
-    //
-    // To customise ksf_set_value(), override it here. Otherwise the trait's
-    // default no-op implementation is used.
-    //
-    // Consumers call these via FA's hook_invoke_first() / hook_invoke_all().
-    // IMPORTANT: FA declares &$data (by-reference). Always pass a variable:
-    //
-    //   $key   = '<module>.<key>';
-    //   $value = hook_invoke_first('ksf_get_value', $key);
-    //
-    // CRUD events: When another module creates/updates/deletes a record, it
-    // dispatches via CrudEventEmitterTrait (ksfraser/traits). Listen by
-    // implementing a method named after the hook:
-    //
-    //   calendar_created_entry(&$payload, $opts = null)  — specific listener
-    //   ksf_crud_event(&$payload, $opts = null)           — generic broadcast
-    //
-    // See: hooks-template.php sections below for commented stubs
-    // =======================================================================
-
     // -----------------------------------------------------------------------
-    // CRUD Event — react to calendar entry creation (example)
-    // Uncomment and customise:
+    // KSF Query Hook System + CRUD Event Listener stubs
     // -----------------------------------------------------------------------
-    // function calendar_created_entry(&$payload, $opts = null)
-    // {
-    //     $entryId = $payload['record_id'];
-    //     $data    = $payload['data'];
-    //     // React to calendar entry creation
-    // }
-
+    // Implemented above with fallback versions. Override for domain-specific queries.
     // -----------------------------------------------------------------------
-    // CRUD Event — react to CRM customer update (example)
-    // -----------------------------------------------------------------------
-    // function crm_updated_customer(&$payload, $opts = null)
-    // {
-    //     $customerId = $payload['record_id'];
-    //     $changed    = $payload['data']['changed_fields'] ?? array();
-    //     // React to customer update
-    // }
-
-    // -----------------------------------------------------------------------
-    // CRUD Event — generic catch-all listener
-    // -----------------------------------------------------------------------
-    // function ksf_crud_event(&$payload, $opts = null)
-    // {
-    //     switch ($payload['action']) {
-    //         case 'created':
-    //             // $payload['module'], $payload['record_type'], $payload['record_id']
-    //             break;
-    //         case 'updated':
-    //             break;
-    //         case 'deleted':
-    //             // Clean up related data when a record is deleted
-    //             break;
-    //     }
-    // }
 
     // =======================================================================
     // 4. Private helpers

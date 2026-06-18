@@ -61,7 +61,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-07 | Select target budget period (12-month window) with start month | `pages/quickbudget.php` form | TBD | UAT-01 | Implemented |
 | FR-08 | Select source period for actuals (prior year same months) | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
 | FR-09 | Calculate budget amounts applying inflation factors to GL actuals | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
-| FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::generate()` skips empty results | TBD | UAT-01 | Partial |
+| FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::getGLAccountsWithActuals()` returns only accounts with actuals | TBD | UAT-01 | Implemented |
 | FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
 | FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
 | FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |

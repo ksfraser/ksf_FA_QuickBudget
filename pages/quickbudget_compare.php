@@ -100,29 +100,82 @@ function render_view(): void
 
 function handle_data(): void
 {
+    global $db;
+
     $year = (int)($_POST['year'] ?? date('Y'));
     $startMonth = (int)($_POST['start_month'] ?? 1);
     $endMonth = (int)($_POST['end_month'] ?? 12);
 
-    // FR-15: Get comparison data
-    // TODO: Implement actual query logic
+    // FR-15: Get comparison data from FA native tables
+    $sql = "SELECT account as gl_account, SUM(amount) as budget_total
+        FROM " . TB_PREF . "budget_trans
+        WHERE YEAR(tran_date) = " . (int)$year . "
+        AND MONTH(tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . "
+        GROUP BY account";
+    $budgetResult = db_query($sql, null);
+
+    $budget = [];
+    while ($row = db_fetch_assoc($budgetResult)) {
+        $budget[$row['gl_account']] = (float)$row['budget_total'];
+    }
+
+    $actuals = [];
+    $variance = [];
+    $sql = "SELECT account_code as gl_account, SUM(amount) as actual_total
+        FROM " . TB_PREF . "gl_trans
+        WHERE YEAR(tran_date) = " . (int)$year . "
+        AND MONTH(tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . "
+        GROUP BY account_code";
+    $actualResult = db_query($sql, null);
+
+    while ($row = db_fetch_assoc($actualResult)) {
+        $actuals[$row['gl_account']] = (float)$row['actual_total'];
+        $variance[$row['gl_account']] = $actuals[$row['gl_account']] - ($budget[$row['gl_account']] ?? 0);
+    }
 
     header('Content-Type: application/json');
     echo json_encode([
-        'actuals' => [],
-        'budget' => [],
-        'variance' => []
+        'actuals' => $actuals,
+        'budget' => $budget,
+        'variance' => $variance
     ]);
     exit;
 }
 
 function handle_export(): void
 {
-    // FR-26: Export comparison report to CSV
-    // TODO: Implement export logic
+    global $db;
+
+    // FR-26: Export comparison report to CSV with variance
+    $year = (int)($_GET['year'] ?? date('Y'));
+    $startMonth = (int)($_GET['start_month'] ?? 1);
+    $endMonth = (int)($_GET['end_month'] ?? 12);
+
+    $sql = "SELECT bt.account as gl_account, 
+            SUM(bt.amount) as budget_total,
+            (SELECT SUM(gt.amount) FROM " . TB_PREF . "gl_trans gt 
+             WHERE gt.account_code = bt.account 
+             AND YEAR(gt.tran_date) = " . (int)$year . "
+             AND MONTH(gt.tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . ") as actual_total
+        FROM " . TB_PREF . "budget_trans bt
+        WHERE YEAR(bt.tran_date) = " . (int)$year . "
+        AND MONTH(bt.tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . "
+        GROUP BY bt.account";
+    $result = db_query($sql, null);
 
     header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="budget_comparison.csv"');
-    echo "GL,Actual,Budget,Variance,Percent\n";
+    header('Content-Disposition: attachment; filename="budget_comparison_' . $year . '.csv"');
+
+    echo "GL Account,Actual,Budget,Variance,Percent\n";
+
+    while ($row = db_fetch_assoc($result)) {
+        $actual = (float)($row['actual_total'] ?: 0);
+        $budget = (float)($row['budget_total'] ?: 0);
+        $variance = $actual - $budget;
+        $percent = $budget != 0 ? ($variance / $budget) * 100 : 0;
+
+        echo "{$row['gl_account']},{$actual},{$budget},{$variance},{$percent}\n";
+    }
+
     exit;
 }
