@@ -27,17 +27,26 @@
 // Range: 100-200 for KSF modules (below 100 reserved by FA core).
 define('SS_ksf_FA_QuickBudget', 104 << 8);
 
+// Ensure autoloader is available for traits
+$moduleAutoload = dirname(__FILE__) . '/vendor/autoload.php';
+if (file_exists($moduleAutoload)) {
+    require_once $moduleAutoload;
+}
+
 // ---------------------------------------------------------------------------
 // 2. Main hooks class
 // ---------------------------------------------------------------------------
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
+    // Provides ksf_get_value(), ksf_get_values(), ksf_set_value() via trait
+    // Safe fallback implemented below if trait unavailable
+    use \Ksfraser\Traits\HookQueryProviderTrait;
+
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
 
-    // KSF Query Hook System — implements ksf_get_value, ksf_get_values, ksf_set_value
-    // via trait if available, otherwise provides minimal fallback
+    // Override hook methods to provide module-specific values
     public function ksf_get_value(&$key, $opts = null)
     {
         return $this->_ksf_get_value($key, $opts);
@@ -53,28 +62,14 @@ class hooks_ksf_FA_QuickBudget extends hooks
         return $this->_ksf_set_value($data, $opts);
     }
 
-// Fallback implementations when trait not available
-    protected function _ksf_get_value(&$key, $opts = null)
+    // Provide advertised values for the trait to return
+    protected function _getAdvertisedValues(): array
     {
-        $values = $this->_getAdvertisedValues();
-        return $values[$key] ?? null;
-    }
-
-    protected function _ksf_get_values(&$keys, $opts = null)
-    {
-        $values = $this->_getAdvertisedValues();
-        $result = [];
-        foreach ($keys as $key) {
-            if (isset($values[$key])) {
-                $result[$key] = $values[$key];
-            }
-        }
-        return $result;
-    }
-
-    protected function _ksf_set_value(&$data, $opts = null)
-    {
-        return null; // No-op by default
+        return array(
+            'quickbudget.version'     => $this->version,
+            'quickbudget.module_name' => $this->module_name,
+            'quickbudget.hooks_version' => '2.0',
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -145,27 +140,6 @@ class hooks_ksf_FA_QuickBudget extends hooks
         }
 
         return true;
-    }
-
-    // =======================================================================
-    // 4. Private helpers
-    // =======================================================================
-
-/**
-      * Return all values this module advertises for the query hook system.
-      *
-      * Each key is namespaced as "quickbudget.<value_name>" to prevent
-      * collisions between modules.
-      *
-      * @return array<string, mixed>
-      */
-    protected function _getAdvertisedValues(): array
-    {
-        return array(
-            'quickbudget.version'     => $this->version,
-            'quickbudget.module_name' => $this->module_name,
-            'quickbudget.hooks_version' => '2.0',
-        );
     }
 }
 

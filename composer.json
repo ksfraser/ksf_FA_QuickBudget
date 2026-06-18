@@ -4,7 +4,8 @@
     "type": "fa-module",
     "license": "GPL-3.0",
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "ksfraser/traits": "^1.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0"
