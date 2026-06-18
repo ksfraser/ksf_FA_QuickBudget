@@ -45,24 +45,21 @@ if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
         public function ksf_get_value(&$key, $opts = null)
         {
             $values = $this->_getAdvertisedValues();
-            return $values[$key] ?? null;
+            return array_key_exists($key, $values) ? $values[$key] : null;
         }
 
-        public function ksf_get_values(&$keys, $opts = null)
+        public function ksf_get_values(&$keys = null, $opts = null)
         {
             $values = $this->_getAdvertisedValues();
-            $result = [];
-            foreach ($keys as $key) {
-                if (isset($values[$key])) {
-                    $result[$key] = $values[$key];
-                }
+            if (empty($keys)) {
+                return $values;
             }
-            return $result;
+            return array_intersect_key($values, array_flip($keys));
         }
 
         public function ksf_set_value(&$data, $opts = null)
         {
-            return null;
+            // Default no-op
         }
     }
 }
@@ -73,29 +70,15 @@ if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
-    // Provides ksf_get_value(), ksf_get_values(), ksf_set_value()
     use HookQueryProviderTrait;
 
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
 
-    // Override hook methods to provide module-specific values
-    public function ksf_get_value(&$key, $opts = null)
-    {
-        return $this->_ksf_get_value($key, $opts);
-    }
-
-    public function ksf_get_values(&$keys, $opts = null)
-    {
-        return $this->_ksf_get_values($keys, $opts);
-    }
-
-    public function ksf_set_value(&$data, $opts = null)
-    {
-        return $this->_ksf_set_value($data, $opts);
-    }
-
-    // Provide advertised values for the trait to return
+    /**
+     * Return advertised values for the KSF query hook system.
+     * Keys are namespaced as "quickbudget.<value_name>".
+     */
     protected function _getAdvertisedValues(): array
     {
         return array(
