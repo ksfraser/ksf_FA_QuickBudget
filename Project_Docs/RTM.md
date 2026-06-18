@@ -50,7 +50,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-01 | Configure global inflation factor as default percentage | `includes/InflationFactorManager.php::setGlobalRate()` | `tests/unit/InflationFactorManagerTest.php::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
 | FR-02 | Configure category-level inflation factors | `includes/InflationFactorManager.php::setCategoryRate()` | `tests/unit/InflationFactorManagerTest.php::testGetRateForAccountReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
 | FR-03 | Configure GL-specific inflation factors | `includes/InflationFactorManager.php::setGLRate()` | `tests/unit/InflationFactorManagerTest.php::testGetRateReturnsGLSpecificRateOverridingCategory` | UAT-03 | Implemented |
-| FR-04 | Import inflation factors from CSV | `pages/quickbudget_config.php::handle_import()` | TBD | UAT-03 | Implemented |
+| FR-04 | Import inflation factors from CSV | `pages/quickbudget_config.php::handle_import()` | `tests/unit/InflationFactorManagerTest.php::testImportFactorsFromCSV` (planned) | UAT-03 | Implemented |
 | FR-05 | Save inflation factor configurations as company preferences | `pages/quickbudget_config.php::handle_save()` | TBD | UAT-03 | Implemented |
 | FR-06 | Export inflation factor configurations to CSV | `pages/quickbudget_config.php::handle_export()` | TBD | UAT-03 | Implemented |
 
