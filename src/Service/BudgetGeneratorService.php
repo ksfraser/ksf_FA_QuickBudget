@@ -50,18 +50,24 @@ final class BudgetGeneratorService
         // Get all GL accounts with actuals in source year
         $glAccounts = $this->getGLAccountsWithActuals($sourceYear);
 
-        foreach ($glAccounts as $glAccount) {
+foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
-            $isIncome = $this->isIncomeAccount($glAccount);
+            [$isIncome, $isBalanceSheet] = $this->getAccountType($glAccount);
 
-$budgetAmounts = [];
+            $budgetAmounts = [];
             for ($month = $startMonth; $month <= 12; $month++) {
                 $actualAmount = $actuals[$month] ?? 0.0;
-                // Apply scenario multiplier: inverse for income (pessimistic = lower income)
-                $effectiveMultiplier = $isIncome
-                    ? 1.0 / max($scenarioMultiplier, 0.01)
-                    : $scenarioMultiplier;
+                // Balance sheet accounts: scenario has no effect (1.0)
+                if ($isBalanceSheet) {
+                    $effectiveMultiplier = 1.0;
+                } elseif ($isIncome) {
+                    // Income: inverse multiplier (pessimistic = lower income)
+                    $effectiveMultiplier = 1.0 / max($scenarioMultiplier, 0.01);
+                } else {
+                    // Expenses: direct multiplier (pessimistic = higher expenses)
+                    $effectiveMultiplier = $scenarioMultiplier;
+                }
                 $budgetAmounts[$month] = $actualAmount * $inflationRate * $effectiveMultiplier;
             }
 
@@ -76,16 +82,16 @@ $budgetAmounts = [];
     }
 
     /**
-     * Check if GL account is an income account.
+     * Check if GL account is an income or balance sheet account.
      *
      * FA account_type: 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 4=Sales, 5=Purchases,
      *                  6=Inventory, 7=COGS, 8=Expense, 9=Other Income, 10=Other Expense
      *
      * @param string $glAccount GL account code
-     * @return bool True if income account (should apply inverse multiplier)
+     * @return array{0: bool, 1: bool} [isIncome, isBalanceSheet]
      * @see FR-13
      */
-    private function isIncomeAccount(string $glAccount): bool
+    private function getAccountType(string $glAccount): array
     {
         global $db;
 
@@ -94,8 +100,14 @@ $budgetAmounts = [];
         $result = \db_query($sql, null);
         $row = \db_fetch_assoc($result);
 
-        // Account types 4 (Sales), 9 (Other Income) should use inverse multiplier
-        return $row && (int)$row['account_type'] === 4;
+        if (!$row) {
+            return [false, false];
+        }
+
+        $type = (int)$row['account_type'];
+        // Income types: 4=Sales, 9=Other Income
+        // Balance sheet (no scenario): 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 6=Inventory
+        return [$type === 4 || $type === 9, $type <= 6];
     }
 
     /**

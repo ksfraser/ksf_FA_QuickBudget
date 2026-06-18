@@ -64,7 +64,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::getGLAccountsWithActuals()` returns only accounts with actuals | TBD | UAT-01 | Implemented |
 | FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
 | FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
-| FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector, `BudgetGeneratorService::isIncomeAccount()` inverse logic | TBD | UAT-04 | Implemented (income inverse; assets/liabilities use expense logic - fix planned) |
+| FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector, `BudgetGeneratorService::getAccountType()` inverse logic, balance sheet bypass | TBD | UAT-04 | Implemented (income inverse, balance sheet unchanged) |
 | FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
 
 ### FR-15–FR-19: Budget Comparison
