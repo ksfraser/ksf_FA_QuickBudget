@@ -42,7 +42,7 @@ final class BudgetGeneratorService
 
         $sourceYear = $targetYear - 1;
 
-        // FR-13: Get scenario multiplier
+        // FR-13: Get scenario multiplier (1.0 = baseline)
         $scenarioMultiplier = $this->getScenarioMultiplier($scenarioId);
 
         $entries = [];
@@ -53,11 +53,16 @@ final class BudgetGeneratorService
         foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
+            $isIncome = $this->isIncomeAccount($glAccount);
 
-            $budgetAmounts = [];
+$budgetAmounts = [];
             for ($month = $startMonth; $month <= 12; $month++) {
                 $actualAmount = $actuals[$month] ?? 0.0;
-                $budgetAmounts[$month] = $actualAmount * $inflationRate * $scenarioMultiplier;
+                // Apply scenario multiplier: inverse for income (pessimistic = lower income)
+                $effectiveMultiplier = $isIncome
+                    ? 1.0 / max($scenarioMultiplier, 0.01)
+                    : $scenarioMultiplier;
+                $budgetAmounts[$month] = $actualAmount * $inflationRate * $effectiveMultiplier;
             }
 
             $entries[] = new BudgetEntryDTO(
@@ -68,6 +73,29 @@ final class BudgetGeneratorService
         }
 
         return $entries;
+    }
+
+    /**
+     * Check if GL account is an income account.
+     *
+     * FA account_type: 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 4=Sales, 5=Purchases,
+     *                  6=Inventory, 7=COGS, 8=Expense, 9=Other Income, 10=Other Expense
+     *
+     * @param string $glAccount GL account code
+     * @return bool True if income account (should apply inverse multiplier)
+     * @see FR-13
+     */
+    private function isIncomeAccount(string $glAccount): bool
+    {
+        global $db;
+
+        $sql = "SELECT account_type FROM " . \TB_PREF . "chart_master
+            WHERE account_code = '" . \mysqli_real_escape_string($db, $glAccount) . "'";
+        $result = \db_query($sql, null);
+        $row = \db_fetch_assoc($result);
+
+        // Account types 4 (Sales), 9 (Other Income) should use inverse multiplier
+        return $row && (int)$row['account_type'] === 4;
     }
 
     /**
