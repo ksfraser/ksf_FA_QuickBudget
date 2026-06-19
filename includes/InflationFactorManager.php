@@ -110,14 +110,55 @@ final class InflationFactorManager
             return $this->glRates[$glAccount];
         }
 
-        // FR-02: Category-level override (default category for now)
-        // FA chart_master typically has account_type or similar field
-        // For simplicity, assume 'Expenses' category defaults
+        // FR-02: Category-level override based on account type
+        $category = $this->getAccountCategory($glAccount);
+        if ($category && isset($this->categoryRates[$category])) {
+            return $this->categoryRates[$category];
+        }
+
+        // Fall back to checking generic 'Expenses' category for backward compatibility
         if (isset($this->categoryRates['Expenses'])) {
             return $this->categoryRates['Expenses'];
         }
 
         // FR-01: Fall back to global default
         return $this->globalRate;
+    }
+
+    /**
+     * Get account category name based on FA chart_master.account_type.
+     * Account types: 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 4=Sales, 5=Purchases,
+     *                6=Inventory, 7=COGS, 8=Expense, 9=Other Income, 10=Other Expense
+     *
+     * @param string $glAccount GL account code
+     * @return string|null Category name or null for balance sheet
+     */
+    private function getAccountCategory(string $glAccount): ?string
+    {
+        // Check if we're in FA context (real $db connection)
+        global $db;
+        if (!is_resource($db) && !($db instanceof \mysqli)) {
+            return null; // Not in FA context, cannot determine category
+        }
+
+        $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
+            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
+        $result = db_query($sql, null);
+        $row = db_fetch_assoc($result);
+
+        if (!$row) {
+            return null;
+        }
+
+        static $typeMap = [
+            4 => 'Income',      // Sales
+            9 => 'Income',        // Other Income
+            5 => 'COGS',        // Purchases (costs of goods)
+            7 => 'COGS',        // COGS
+            8 => 'Expenses',    // Expense
+            10 => 'Expenses',    // Other Expense
+        ];
+
+        return $typeMap[(int)$row['account_type']] ?? null;
     }
 }
