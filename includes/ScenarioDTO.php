@@ -28,8 +28,10 @@ final class ScenarioDTO
         string $name,
         float $multiplier,
         string $description = '',
-        int $company = 0
+        int $company = 0,
+        int $id = 0
     ) {
+        $this->id = $id;
         $this->name = $name;
         $this->multiplier = $multiplier;
         $this->description = $description;
@@ -54,5 +56,15 @@ final class ScenarioDTO
     public function getCompany(): int
     {
         return $this->company;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
     }
 }
