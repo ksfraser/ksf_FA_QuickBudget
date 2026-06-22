@@ -70,7 +70,7 @@ if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
-    use HookQueryProviderTrait;
+    use \Ksfraser\Traits\HookQueryProviderTrait;
 
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
@@ -111,7 +111,7 @@ class hooks_ksf_FA_QuickBudget extends hooks
         switch ($app->id) {
             case 'GL':
                 $app->add_lapp_function(2, _("Quick Budget"),
-                    $path_to_root . "/modules/" . $this->module_name . "/quickbudget.php",
+                    $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget.php",
                     'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
                 break;
         }
