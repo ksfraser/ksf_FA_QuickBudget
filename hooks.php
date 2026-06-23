@@ -30,36 +30,43 @@ define('SS_ksf_FA_QuickBudget', 104 << 8);
 // ---------------------------------------------------------------------------
 // 2. Define fallback trait if ksfraser/traits not available
 // ---------------------------------------------------------------------------
-trait HookQueryProviderTrait
-{
-    public function ksf_get_value(&$key, $opts = null)
-    {
-        $values = $this->_getAdvertisedValues();
-        return array_key_exists($key, $values) ? $values[$key] : null;
-    }
-
-    public function ksf_get_values(&$keys = null, $opts = null)
-    {
-        $values = $this->_getAdvertisedValues();
-        if (empty($keys)) {
-            return $values;
+if (!trait_exists('HookQueryProviderTrait')) {
+    // Try to load namespaced trait if available (composer install required)
+    $moduleDir = dirname(__FILE__);
+    $moduleAutoload = $moduleDir . '/vendor/autoload.php';
+    $hasNamespacedTrait = false;
+    if (file_exists($moduleAutoload)) {
+        require_once $moduleAutoload;
+        if (trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
+            class_alias('\Ksfraser\Traits\HookQueryProviderTrait', 'HookQueryProviderTrait');
+            $hasNamespacedTrait = true;
         }
-        return array_intersect_key($values, array_flip($keys));
     }
+    
+    // Only define fallback trait if namespaced trait unavailable
+    if (!$hasNamespacedTrait) {
+        trait HookQueryProviderTrait
+        {
+            public function ksf_get_value(&$key, $opts = null)
+            {
+                $values = $this->_getAdvertisedValues();
+                return array_key_exists($key, $values) ? $values[$key] : null;
+            }
 
-    public function ksf_set_value(&$data, $opts = null)
-    {
-        // Default no-op
-    }
-}
+            public function ksf_get_values(&$keys = null, $opts = null)
+            {
+                $values = $this->_getAdvertisedValues();
+                if (empty($keys)) {
+                    return $values;
+                }
+                return array_intersect_key($values, array_flip($keys));
+            }
 
-// Try to load namespaced trait if available (composer install required)
-$moduleDir = dirname(__FILE__);
-$moduleAutoload = $moduleDir . '/vendor/autoload.php';
-if (file_exists($moduleAutoload)) {
-    require_once $moduleAutoload;
-    if (trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
-        class_alias('\Ksfraser\Traits\HookQueryProviderTrait', 'HookQueryProviderTrait');
+            public function ksf_set_value(&$data, $opts = null)
+            {
+                // Default no-op
+            }
+        }
     }
 }
 
