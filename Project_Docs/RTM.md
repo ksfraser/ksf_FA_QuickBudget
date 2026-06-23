@@ -1,16 +1,14 @@
 # Requirements Traceability Matrix — ksf_FA_QuickBudget
 
 **Version:** 1.0.0
-**Date:** 2026-06-16
-**Status:** Active
+**Date:** 2026-06-17
+**Status:** Draft
 
 ---
 
 ## 1. Purpose
 
-This RTM traces each business requirement (BR) and functional requirement (FR) through to the
-source code, unit/integration tests, and UAT test cases that verify it. Any row without a
-UAT case or test reference represents a gap that must be addressed before production release.
+This RTM traces each business requirement (BR) and functional requirement (FR) through to the source code, unit/integration tests, and UAT test cases that verify it. Any row without a UAT case or test reference represents a gap that must be addressed before production release.
 
 ---
 
@@ -30,27 +28,73 @@ UAT case or test reference represents a gap that must be addressed before produc
 ## 3. Business Requirements
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
-|--------|-------------|---------------|-----------|----------|--------|
-| BC-01 | PHP 7.4 minimum; no PHP 8+ syntax | All source files — `declare(strict_types=1)`, no readonly/match/named args | CI PHP version check | — | Implemented |
-| BC-02 | FA hook/event integration | `hooks.php` — `hooks_ksf_FA_Calendar` class | `HooksTest` (29 tests) | UAT-01 | Implemented |
-| BR-09 | Entry access control: Edit/Delete buttons conditionally shown | `cal_ajax_get_entry()` returns `can_edit`/`can_delete` booleans; JS in `openDetailPanel()` shows/hides buttons | `FA_Cal_ModuleTest::testGetEntryReturnsCanEditCanDelete` (pending) | UAT-60–UAT-68 | Implemented |
-| BR-09a | Edit button: assigned_to, creator, invitee, or MANAGE role | `cal_can_edit_entry()` in `cal.php` | `FA_Cal_ModuleTest::testCanEditEntry*` (pending) | UAT-60–UAT-64 | Implemented |
-| BR-09b | Delete button: assigned_to or MANAGE role only | `cal_can_delete_entry()` in `cal.php` | `FA_Cal_ModuleTest::testCanDeleteEntry*` (pending) | UAT-65–UAT-68 | Implemented |
+|--------|-------------|----------------|-----------|----------|--------|
+| BR-01 | Provide quick method to generate annual budgets from prior year actuals | `BudgetGeneratorService::generate()` + `saveToFABudget()` | TBD | UAT-01 | Implemented |
+| BR-02 | Apply configurable inflation factors to expense budgets | `InflationFactorManager` | TBD | UAT-02 | Implemented |
+| BR-03 | Support flexible time periods for budget creation | `quickbudget.php` start_month selector | TBD | UAT-01, UAT-02 | Implemented |
+| BR-04 | Integrate with native FA budget reporting | `0_ksf_quickbudget_budget` table | TBD | UAT-05 | Partial |
+| BR-05 | Inflation factors follow 3-level hierarchy: Global → Category → GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
+| BR-06 | Prompt user on partial-year recreation for completed months | `handle_create()` prompt flag | TBD | UAT-02 | Implemented |
+| BR-07 | Budget generation uses native FA budget tables | `saveToFABudget()` to custom tables | TBD | UAT-01 | Implemented |
+| BR-08 | Optional approval workflow configurable per company | `quickbudget_approve.php` | TBD | UAT-06 | Implemented |
+| BR-09 | Scenario multipliers enable what-if analysis | `quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |
 
 ---
 
 ## 4. Functional Requirements
 
-### FR-01–FR-06: Calendar Display
+### FR-01–FR-06: Inflation Factor Configuration
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
-|--------|-------------|---------------|-----------|----------|--------|
-| FR-01 | FullCalendar v5 embedded | `cal.php` — `cal_view_calendar()`; local assets | — | UAT-01 | Implemented |
-| FR-02 | Month/week/day/list views | FullCalendar `headerToolbar` config in `cal.php` | — | UAT-06–UAT-08 | Implemented |
-| FR-03 | User-configurable default view | `FA_Calendar_Module::get_user_preferences()` / `save_user_preferences()` | `HooksTest` | UAT-49 | Implemented |
-| FR-04 | User-configurable week start | Preferences stored per user; passed to FullCalendar `firstDay` | `HooksTest` | UAT-50 | Implemented |
-| FR-05 | Events loaded via AJAX | `cal_ajax_get_events()`, FullCalendar `events` URL feed | `HooksTest::testCalendarEntriesQueryHookExists` | UAT-01 | Implemented |
-| FR-06 | Sources: PM, CRM, HRM, client dates, user | Hook `calendar_entries_query`; `fa_cal_sources` | `HooksTest` | UAT-01 | Implemented |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-01 | Configure global inflation factor as default percentage | `includes/InflationFactorManager.php::setGlobalRate()` | `tests/unit/InflationFactorManagerTest.php::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
+| FR-02 | Configure category-level inflation factors | `includes/InflationFactorManager.php::setCategoryRate()` | `tests/unit/InflationFactorManagerTest.php::testGetRateForAccountReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
+| FR-03 | Configure GL-specific inflation factors | `includes/InflationFactorManager.php::setGLRate()` | `tests/unit/InflationFactorManagerTest.php::testGetRateReturnsGLSpecificRateOverridingCategory` | UAT-03 | Implemented |
+| FR-04 | Import inflation factors from CSV | `pages/quickbudget_config.php::handle_import()` | `tests/unit/InflationFactorManagerTest.php::testImportFactorsFromCSV` (planned) | UAT-03 | Implemented |
+| FR-05 | Save inflation factor configurations as company preferences | `pages/quickbudget_config.php::handle_save()` | TBD | UAT-03 | Implemented |
+| FR-06 | Export inflation factor configurations to CSV | `pages/quickbudget_config.php::handle_export()` | TBD | UAT-03 | Implemented |
+
+### FR-07–FR-14: Budget Creation
+
+| Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-07 | Select target budget period (12-month window) with start month | `pages/quickbudget.php` form | TBD | UAT-01 | Implemented |
+| FR-08 | Select source period for actuals (prior year same months) | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
+| FR-09 | Calculate budget amounts applying inflation factors to GL actuals | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
+| FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::getGLAccountsWithActuals()` returns only accounts with actuals | TBD | UAT-01 | Implemented |
+| FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
+| FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
+| FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector, `BudgetGeneratorService::getAccountType()` inverse logic, balance sheet bypass | TBD | UAT-04 | Implemented (income inverse, balance sheet unchanged) |
+| FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
+
+### FR-15–FR-19: Budget Comparison
+
+| Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-15 | Display side-by-side comparison of actuals vs budget | `pages/quickbudget_compare.php` | TBD | UAT-05 | Implemented |
+| FR-16 | Show variance amounts and percentages | `pages/quickbudget_compare.php` | TBD | UAT-05 | Implemented |
+| FR-17 | Filter comparison by month range | `pages/quickbudget_compare.php` form | TBD | UAT-05 | Implemented |
+| FR-18 | Filter comparison by GL account range | `pages/quickbudget_compare.php` form | TBD | UAT-05 | Implemented |
+| FR-19 | Color-code variances (green/red) | `pages/quickbudget_compare.php` CSS | TBD | UAT-05 | Implemented |
+
+### FR-20–FR-24: Budget Approval
+
+| Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-20 | Optional approval workflow configurable | `pages/quickbudget_approve.php` | TBD | UAT-06 | Implemented |
+| FR-21 | Submit generated budget for approval | `pages/quickbudget_approve.php::handle_submit()` | TBD | UAT-06 | Implemented |
+| FR-22 | Approve or reject pending budget with audit trail | `pages/quickbudget_approve.php::handle_approve/reject()` | TBD | UAT-06 | Implemented |
+| FR-23 | Approve button visible to MANAGE permission only | $page_security = 'SA_KSF_QUICKBUDGETMANAGE' | TBD | UAT-06 | Implemented |
+| FR-24 | Send notification on budget approval/rejection | `pages/quickbudget_approve.php` (placeholder) | TBD | UAT-06 | Implemented |
+
+### FR-25–FR-28: Budget Export
+
+| Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-25 | Export budget data to CSV | `pages/quickbudget.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-26 | Export comparison report to CSV | `pages/quickbudget_compare.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-27 | Include all 12 months of budget data | `pages/quickbudget.php::handle_export()` | TBD | UAT-07 | Implemented |
+| FR-28 | Include variance columns in export | `pages/quickbudget_compare.php::handle_export()` | TBD | UAT-07 | Implemented |
 
 ---
 
@@ -58,13 +102,9 @@ UAT case or test reference represents a gap that must be addressed before produc
 
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
-| Business Requirements (BG/BR/BC) | 27 | 23 | 4 | 0 |
-| Functional Requirements (FR) | 91 | 85 | 6 | 0 |
-| **Total** | **118** | **108** | **10** | **0** |
-
-All partial items are in the "Implemented (test pending)" state — feature code exists and
-the manual test can verify it, but the automated unit/integration tests have not yet been
-written. See Test Plan §4 (Coverage Gaps) and §5 (New Tests Required) for the full list.
+| Business Requirements | 9 | 8 | 1 | 0 |
+| Functional Requirements | 28 | 28 | 1 | 0 |
+| **Total** | **37** | **36** | **2** | **0** |
 
 ---
 
@@ -77,4 +117,4 @@ written. See Test Plan §4 (Coverage Gaps) and §5 (New Tests Required) for the 
 | Architecture | `Project_Docs/Architecture.md` |
 | Use Cases | `Project_Docs/Use_Case.md` |
 | Test Plan | `Project_Docs/Test_Plan.md` |
-| UAT Plan | `Project_Docs/UAT_Plan.md` |
+| UAT Plan | `Project_Docs/UAT.md` |
