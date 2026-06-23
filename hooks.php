@@ -27,45 +27,44 @@
 // Range: 100-200 for KSF modules (below 100 reserved by FA core).
 define('SS_ksf_FA_QuickBudget', 104 << 8);
 
-// Ensure composer dependencies before loading trait
-$moduleDir = dirname(__FILE__);
-require_once $moduleDir . '/includes/ComposerDependencies.php';
-ComposerDependencies::ensure($moduleDir);
+// ---------------------------------------------------------------------------
+// 2. Define fallback trait if ksfraser/traits not available
+// ---------------------------------------------------------------------------
+trait HookQueryProviderTrait
+{
+    public function ksf_get_value(&$key, $opts = null)
+    {
+        $values = $this->_getAdvertisedValues();
+        return array_key_exists($key, $values) ? $values[$key] : null;
+    }
 
-// Load autoloader for trait
+    public function ksf_get_values(&$keys = null, $opts = null)
+    {
+        $values = $this->_getAdvertisedValues();
+        if (empty($keys)) {
+            return $values;
+        }
+        return array_intersect_key($values, array_flip($keys));
+    }
+
+    public function ksf_set_value(&$data, $opts = null)
+    {
+        // Default no-op
+    }
+}
+
+// Try to load namespaced trait if available (composer install required)
+$moduleDir = dirname(__FILE__);
 $moduleAutoload = $moduleDir . '/vendor/autoload.php';
 if (file_exists($moduleAutoload)) {
     require_once $moduleAutoload;
-}
-
-// Define fallback trait if ksfraser/traits not available
-if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
-    trait HookQueryProviderTrait
-    {
-        public function ksf_get_value(&$key, $opts = null)
-        {
-            $values = $this->_getAdvertisedValues();
-            return array_key_exists($key, $values) ? $values[$key] : null;
-        }
-
-        public function ksf_get_values(&$keys = null, $opts = null)
-        {
-            $values = $this->_getAdvertisedValues();
-            if (empty($keys)) {
-                return $values;
-            }
-            return array_intersect_key($values, array_flip($keys));
-        }
-
-        public function ksf_set_value(&$data, $opts = null)
-        {
-            // Default no-op
-        }
+    if (trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
+        class_alias('\Ksfraser\Traits\HookQueryProviderTrait', 'HookQueryProviderTrait');
     }
 }
 
 // ---------------------------------------------------------------------------
-// 2. Main hooks class
+// 3. Main hooks class
 // ---------------------------------------------------------------------------
 
 class hooks_ksf_FA_QuickBudget extends hooks
@@ -89,7 +88,7 @@ class hooks_ksf_FA_QuickBudget extends hooks
     }
 
     // -----------------------------------------------------------------------
-    // 3. Standard FA hooks
+    // 4. Standard FA hooks
     // -----------------------------------------------------------------------
 
     /**
@@ -144,11 +143,11 @@ class hooks_ksf_FA_QuickBudget extends hooks
         $updates = array();
 
         if (file_exists(dirname(__FILE__) . '/sql/install.sql')) {
-            $updates['install.sql'] = array('ksf_quickbudget_budget');
+            $updates['install.sql'] = array('ksf_quickbudget_factors');
         }
 
         if (file_exists(dirname(__FILE__) . '/sql/update.sql')) {
-            $updates['update.sql'] = array('ksf_quickbudget_budget');
+            $updates['update.sql'] = array('ksf_quickbudget_factors');
         }
 
         if (!empty($updates)) {
