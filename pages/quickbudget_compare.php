@@ -22,7 +22,7 @@ if ($_ksf_quickbudget_is_ajax) {
     });
 }
 
-$path_to_root = "../../..";
+$path_to_root = "../..";
 $page_security = 'SA_KSF_QUICKBUDGETVIEW';
 include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();

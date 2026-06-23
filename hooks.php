@@ -70,7 +70,7 @@ if (!trait_exists('\Ksfraser\Traits\HookQueryProviderTrait')) {
 
 class hooks_ksf_FA_QuickBudget extends hooks
 {
-    use \Ksfraser\Traits\HookQueryProviderTrait;
+    use HookQueryProviderTrait;
 
     var $module_name = 'ksf_FA_QuickBudget';
     var $version     = '0.1.0';
