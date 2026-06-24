@@ -28,8 +28,8 @@
 define('SS_ksf_FA_QuickBudget', 104 << 8);
 
 // ---------------------------------------------------------------------------
-// 2. Define HookQueryProviderTrait (local implementation)
-//    Per AGENTS.md warning: use local trait to avoid autoload fatal errors
+// 2. Define HookQueryProviderTrait in this file
+//    This follows AGENTS.md pattern: trait defined locally to avoid autoload dependency
 // ---------------------------------------------------------------------------
 if (!trait_exists('HookQueryProviderTrait')) {
     trait HookQueryProviderTrait
