@@ -28,43 +28,36 @@
 define('SS_ksf_FA_QuickBudget', 104 << 8);
 
 // ---------------------------------------------------------------------------
-// 2. Try to load namespaced HookQueryProviderTrait for compatibility
-//    Per AGENTS.md warning: must check autoload existence to avoid fatal errors
-//    This follows the pattern in AGENTS.md: "load lazily inside hook methods"
+// 2. Define HookQueryProviderTrait (local implementation)
+//    Per AGENTS.md warning: use local trait to avoid autoload fatal errors
 // ---------------------------------------------------------------------------
-$moduleAutoload = dirname(__FILE__) . '/vendor/autoload.php';
-if (file_exists($moduleAutoload)) {
-    require_once $moduleAutoload;
-}
-
-// ---------------------------------------------------------------------------
-// 3. Local HookQueryProviderTrait implementation (matches ksfraser/traits API)
-// ---------------------------------------------------------------------------
-trait HookQueryProviderTrait
-{
-    public function ksf_get_value(&$key, $opts = null)
+if (!trait_exists('HookQueryProviderTrait')) {
+    trait HookQueryProviderTrait
     {
-        $values = $this->_getAdvertisedValues();
-        return array_key_exists($key, $values) ? $values[$key] : null;
-    }
-
-    public function ksf_get_values(&$keys = null, $opts = null)
-    {
-        $values = $this->_getAdvertisedValues();
-        if (empty($keys)) {
-            return $values;
+        public function ksf_get_value(&$key, $opts = null)
+        {
+            $values = $this->_getAdvertisedValues();
+            return array_key_exists($key, $values) ? $values[$key] : null;
         }
-        return array_intersect_key($values, array_flip($keys));
-    }
 
-    public function ksf_set_value(&$data, $opts = null)
-    {
-        // Default no-op
+        public function ksf_get_values(&$keys = null, $opts = null)
+        {
+            $values = $this->_getAdvertisedValues();
+            if (empty($keys)) {
+                return $values;
+            }
+            return array_intersect_key($values, array_flip($keys));
+        }
+
+        public function ksf_set_value(&$data, $opts = null)
+        {
+            // Default no-op
+        }
     }
 }
 
 // ---------------------------------------------------------------------------
-// 4. Main hooks class
+// 3. Main hooks class
 // ---------------------------------------------------------------------------
 
 class hooks_ksf_FA_QuickBudget extends hooks
@@ -88,7 +81,7 @@ class hooks_ksf_FA_QuickBudget extends hooks
     }
 
     // -----------------------------------------------------------------------
-    // 5. Standard FA hooks
+    // 4. Standard FA hooks
     // -----------------------------------------------------------------------
 
     /**
@@ -159,7 +152,7 @@ class hooks_ksf_FA_QuickBudget extends hooks
 }
 
 // ===========================================================================
-// 6. Application class : Only needed if install_tabs() adds a new tab
+// 5. Application class : Only needed if install_tabs() adds a new tab
 // ===========================================================================
 // Uncomment and customise if your module creates a new top-level FA tab.
 //
