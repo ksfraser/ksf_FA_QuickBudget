@@ -92,6 +92,37 @@ function render_view(): void
     echo "</form>";
     echo "</div>";
 
+    // JavaScript to handle form submission
+    echo "<script>
+    document.getElementById('quickbudget-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Refresh to show clean UI
+                window.location.reload();
+            } else if (data.prompt) {
+                if (confirm(data.message)) {
+                    formData.set('confirmed', '1');
+                    fetch(form.action, { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(d => alert(d.message));
+                }
+            } else {
+                alert(data.error || 'Unknown error');
+            }
+        });
+    });
+    </script>";
+
     end_page();
 }
 
