@@ -146,8 +146,14 @@ final class BudgetGeneratorService
         global $db;
 
         // Include FA's GL budget functions if path provided
-        if ($pathToRoot && file_exists($pathToRoot . "/gl/includes/db/gl_db_trans.inc")) {
-            include_once($pathToRoot . "/gl/includes/db/gl_db_trans.inc");
+        error_log("QuickBudget saveToFABudget pathToRoot: $pathToRoot");
+        $glPath = $pathToRoot . "/gl/includes/db/gl_db_trans.inc";
+        error_log("QuickBudget GL path: $glPath");
+        if ($pathToRoot && file_exists($glPath)) {
+            error_log("QuickBudget including: $glPath");
+            include_once($glPath);
+        } else {
+            error_log("QuickBudget: GL include not found at $glPath");
         }
 
         $count = 0;
