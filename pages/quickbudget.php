@@ -7,42 +7,10 @@
  */
 declare(strict_types=1);
 
-$_ksf_quickbudget_is_ajax = isset($_GET['action']) && $_GET['action'] !== '';
-
-if ($_ksf_quickbudget_is_ajax) {
-    ob_start(function ($html) {
-        if (strpos($html, 'user_name_entry_field') !== false) {
-            if (!headers_sent()) {
-                http_response_code(401);
-                header('Content-Type: application/json');
-            }
-            return json_encode(array('error' => 'session_expired'));
-        }
-        // Check for PHP errors that would break JSON parsing
-        if (preg_match('/^(<br\s*\/?>|\s*Fatal|<[^>]+error)/i', trim($html))) {
-            error_log("QuickBudget AJAX PHP error: " . $html);
-            if (!headers_sent()) {
-                http_response_code(500);
-                header('Content-Type: application/json');
-            }
-            return json_encode(array('error' => 'Server error'));
-        }
-        return $html;
-    });
-}
-
 $path_to_root = "../../..";
 $page_security = 'SA_KSF_QUICKBUDGETVIEW';
 include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
-
-global $db;
-
-if ($_ksf_quickbudget_is_ajax) {
-    while (ob_get_level() > 1) {
-        ob_end_clean();
-    }
-}
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
@@ -69,9 +37,14 @@ function render_view(): void
 
     page(_("Quick Budget"), false, false, '', '');
 
+    // Show messages
+    if (isset($_GET['message'])) {
+        echo "<div class='alert alert-info'>" . htmlspecialchars($_GET['message']) . "</div>";
+    }
+
     echo "<div class='card'>";
     echo "<h3>" . _("Generate Budget") . "</h3>";
-    echo "<form id='quickbudget-form' method='post' action='quickbudget.php?action=create'>";
+    echo "<form method='post' action='quickbudget.php?action=create'>";
 
     echo "<table class='table table-bordered'>";
     echo "<tr><th>" . _("Target Year") . "</th><td>";
@@ -101,52 +74,6 @@ function render_view(): void
     echo "</form>";
     echo "</div>";
 
-    // JavaScript to handle form submission
-    echo "<script>
-    document.getElementById('quickbudget-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        var form = this;
-        var formData = new FormData(form);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            console.log('Response:', response);
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Data:', data);
-            if (data.success) {
-                alert(data.message);
-                // Refresh to show clean UI
-                window.location.reload();
-            } else if (data.prompt) {
-                if (confirm(data.message)) {
-                    formData.set('confirmed', '1');
-                    fetch(form.action, { method: 'POST', body: formData })
-                        .then(r => {
-                            if (!r.ok) throw new Error('HTTP ' + r.status);
-                            return r.json();
-                        })
-                        .then(d => alert(d.message))
-                        .catch(err => alert('Error: ' + err.message));
-                }
-            } else {
-                alert(data.error || 'Unknown error');
-            }
-        })
-        .catch(err => {
-            console.error('Budget generation error:', err);
-            alert('Error: ' + err.message);
-        });
-    });
-    </script>";
-
     end_page();
 }
 
@@ -167,20 +94,14 @@ function handle_create(): void
             $completedMonths,
             $startMonth - 1
         );
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => $message]);
+        header('Location: quickbudget.php?message=' . urlencode($message));
         exit;
     }
 
     // FR-12: Check for existing budget - prompt if exists for months before startMonth
     $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
     if ($existingCount > 0 && $startMonth > 1) {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'prompt' => true,
-            'message' => sprintf(_("Budget already exists for %d months. Overwrite?"), $existingCount)
-        ]);
+        header('Location: quickbudget.php?message=' . urlencode(_("Budget already exists for some months. Delete existing entries first.")));
         exit;
     }
 
@@ -200,14 +121,8 @@ function handle_create(): void
     // FR-14: Save to FA native budget tables
     $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
 
-    $result = array(
-        'success' => true,
-        'message' => 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries',
-        'year' => $targetYear
-    );
-
-    header('Content-Type: application/json');
-    echo json_encode($result);
+    $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
+    header('Location: quickbudget.php?message=' . urlencode($message));
     exit;
 }
 
