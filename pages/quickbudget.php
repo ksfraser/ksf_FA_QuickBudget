@@ -113,12 +113,14 @@ function render_view(): void
             body: formData
         })
         .then(response => {
+            console.log('Response:', response);
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Data:', data);
             if (data.success) {
                 alert(data.message);
                 // Refresh to show clean UI
@@ -190,8 +192,7 @@ function handle_create(): void
     $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
 
     $service = new \Ksfraser\FA\QuickBudget\Service\BudgetGeneratorService($manager);
-
-$entries = $service->generate($targetYear, $startMonth, $scenarioId);
+    $entries = $service->generate($targetYear, $startMonth, $scenarioId);
 
     // Debug: log source year and entry count
     error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
