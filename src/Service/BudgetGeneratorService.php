@@ -7,11 +7,6 @@
  */
 declare(strict_types=1);
 
-namespace Ksfraser\FA\QuickBudget\Service;
-
-// Note: TB_PREF and db_* functions are global namespace
-// InflationFactorManager and BudgetEntryDTO are in global namespace
-
 final class BudgetGeneratorService
 {
     /** @var InflationFactorManager */
@@ -45,7 +40,7 @@ final class BudgetGeneratorService
 
         $entries = [];
 
-// Get all GL accounts with actuals in source year
+        // Get all GL accounts with actuals in source year
         $glAccounts = $this->getGLAccountsWithActuals($sourceYear);
 
         foreach ($glAccounts as $glAccount) {
@@ -219,6 +214,13 @@ final class BudgetGeneratorService
         return $accounts;
     }
 
+    /**
+     * Get monthly actuals for a GL account.
+     *
+     * @param string $glAccount GL account code
+     * @param int $year
+     * @return array<int, float> Monthly amounts indexed 1-12
+     */
     private function getActualsByGL(string $glAccount, int $year): array
     {
         global $db;

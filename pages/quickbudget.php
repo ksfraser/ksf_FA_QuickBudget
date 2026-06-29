@@ -85,49 +85,55 @@ function handle_create(): void
 {
     global $db, $path_to_root;
 
-    $targetYear = (int)($_POST['target_year'] ?? date('Y') + 1);
-    $startMonth = (int)($_POST['start_month'] ?? 1);
-    $scenarioId = (int)($_POST['scenario_id'] ?? 0);
+    try {
+        $targetYear = (int)($_POST['target_year'] ?? date('Y') + 1);
+        $startMonth = (int)($_POST['start_month'] ?? 1);
+        $scenarioId = (int)($_POST['scenario_id'] ?? 0);
 
-    // FR-11: Validate source period has completed actuals
-    $sourceYear = $targetYear - 1;
-    $completedMonths = get_completed_months_for_year($sourceYear);
-    if ($completedMonths < $startMonth - 1) {
-        $message = sprintf(
-            _("Cannot generate budget: source year has only %d completed months, need %d"),
-            $completedMonths,
-            $startMonth - 1
-        );
+        // FR-11: Validate source period has completed actuals
+        $sourceYear = $targetYear - 1;
+        $completedMonths = get_completed_months_for_year($sourceYear);
+        if ($completedMonths < $startMonth - 1) {
+            $message = sprintf(
+                _("Cannot generate budget: source year has only %d completed months, need %d"),
+                $completedMonths,
+                $startMonth - 1
+            );
+            $msg = urlencode($message);
+            echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
+            exit;
+        }
+
+        // FR-12: Check for existing budget - prompt if exists for months before startMonth
+        $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
+        if ($existingCount > 0 && $startMonth > 1) {
+            $msg = urlencode(_("Budget already exists for some months. Delete existing entries first."));
+            echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
+            exit;
+        }
+
+        // FR-09: Generate budget
+        $manager = new InflationFactorManager();
+        $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
+
+        $service = new BudgetGeneratorService($manager);
+        $entries = $service->generate($targetYear, $startMonth, $scenarioId);
+
+        // Debug: log source year and entry count
+        error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
+
+        // FR-14: Save to FA native budget tables
+        $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
+
+        $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
         $msg = urlencode($message);
         echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
         exit;
-    }
-
-    // FR-12: Check for existing budget - prompt if exists for months before startMonth
-    $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
-    if ($existingCount > 0 && $startMonth > 1) {
-        $msg = urlencode(_("Budget already exists for some months. Delete existing entries first."));
+    } catch (\Exception $e) {
+        error_log("QuickBudget error: " . $e->getMessage());
+        $msg = urlencode("Error: " . $e->getMessage());
         echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
-        exit;
     }
-
-    // FR-09: Generate budget
-    $manager = new InflationFactorManager();
-    $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
-
-    $service = new \Ksfraser\FA\QuickBudget\Service\BudgetGeneratorService($manager);
-    $entries = $service->generate($targetYear, $startMonth, $scenarioId);
-
-    // Debug: log source year and entry count
-    error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
-
-    // FR-14: Save to FA native budget tables
-    $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
-
-    $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
-    $msg = urlencode($message);
-    echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
-    exit;
 }
 
 /**
