@@ -13,8 +13,8 @@ include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
 
 // Load module classes
-require_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
-require_once(dirname(__DIR__) . '/src/Service/BudgetGeneratorService.php');
+require_once($path_to_root . '/modules/ksf_FA_QuickBudget/includes/InflationFactorManager.php');
+require_once($path_to_root . '/modules/ksf_FA_QuickBudget/src/Service/BudgetGeneratorService.php');
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
@@ -133,6 +133,7 @@ function handle_create(): void
         error_log("QuickBudget error: " . $e->getMessage());
         $msg = urlencode("Error: " . $e->getMessage());
         echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
+        exit;
     }
 }
 
