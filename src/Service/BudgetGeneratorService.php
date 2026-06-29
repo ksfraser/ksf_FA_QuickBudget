@@ -160,15 +160,28 @@ final class BudgetGeneratorService
         foreach ($entries as $entry) {
             $monthlyAmounts = $entry->getMonthlyAmounts();
             foreach ($monthlyAmounts as $month => $amount) {
-                if ($amount != 0.0 && function_exists('add_update_gl_budget_trans')) {
+                if ($amount != 0.0) {
                     $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    add_update_gl_budget_trans(
-                        $date,
-                        $entry->getGLAccount(),
-                        0,
-                        0,
-                        $amount
-                    );
+                    
+                    // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
+                    if (function_exists('add_update_gl_budget_trans')) {
+                        add_update_gl_budget_trans(
+                            $date,
+                            $entry->getGLAccount(),
+                            0,
+                            0,
+                            $amount
+                        );
+                    } else {
+                        // Direct DB insert as fallback
+                        $sql = "INSERT INTO " . TB_PREF . "budget_trans
+                            (tran_date, account, dimension_id, dimension2_id, amount)
+                            VALUES ('" . mysqli_real_escape_string($db, $date) . "',
+                                '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
+                                0, 0, " . (float)$amount . ")";
+                        db_query($sql);
+                        error_log("QuickBudget direct DB insert: " . substr($sql, 0, 100));
+                    }
 
                     // FR-21: Submit for approval if requested
                     if ($submitForApproval) {
