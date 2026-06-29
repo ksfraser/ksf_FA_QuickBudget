@@ -13,6 +13,8 @@ include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
 
 // Load module classes (relative to pages directory)
+// BudgetEntryDTO must be loaded first as BudgetGeneratorService depends on it
+require_once('../includes/BudgetEntryDTO.php');
 require_once('../includes/InflationFactorManager.php');
 require_once('../src/Service/BudgetGeneratorService.php');
 
@@ -84,6 +86,18 @@ function render_view(): void
 function handle_create(): void
 {
     global $db, $path_to_root;
+
+    // Check if classes loaded
+    if (!class_exists('InflationFactorManager')) {
+        error_log('QuickBudget error: InflationFactorManager class not loaded');
+        echo 'Error: InflationFactorManager not loaded';
+        exit;
+    }
+    if (!class_exists('BudgetGeneratorService')) {
+        error_log('QuickBudget error: BudgetGeneratorService class not loaded');
+        echo 'Error: BudgetGeneratorService not loaded';
+        exit;
+    }
 
     try {
         $targetYear = (int)($_POST['target_year'] ?? date('Y') + 1);
