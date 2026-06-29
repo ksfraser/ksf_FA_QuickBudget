@@ -105,7 +105,13 @@ class hooks_ksf_FA_QuickBudget extends hooks
                 $app->add_lapp_function(2, _("Quick Budget"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget.php",
                     'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
-                $app->add_lapp_function(3, _("Quick Budget Config"),
+                $app->add_lapp_function(3, _("Quick Budget Compare"),
+                    $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_compare.php",
+                    'SA_KSF_QUICKBUDGETVIEW', MENU_INQUIRY);
+                $app->add_lapp_function(4, _("Quick Budget Approval"),
+                    $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_approve.php",
+                    'SA_KSF_QUICKBUDGETMANAGE', MENU_INQUIRY);
+                $app->add_lapp_function(5, _("Quick Budget Config"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_config.php",
                     'SA_KSF_QUICKBUDGETMANAGE', MENU_SETTINGS);
                 break;
@@ -126,6 +132,14 @@ class hooks_ksf_FA_QuickBudget extends hooks
         $security_areas['SA_KSF_QUICKBUDGETMANAGE'] = array(
             SS_ksf_FA_QuickBudget | 2,
             _("Manage Quick Budget")
+        );
+        $security_areas['SA_KSF_QUICKBUDGETAPPROVE'] = array(
+            SS_ksf_FA_QuickBudget | 3,
+            _("Approve Quick Budget")
+        );
+        $security_areas['SA_KSF_QUICKBUDGETCOMPARE'] = array(
+            SS_ksf_FA_QuickBudget | 4,
+            _("Compare Quick Budget")
         );
 
         return array($security_areas, $security_sections);
