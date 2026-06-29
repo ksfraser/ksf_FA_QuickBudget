@@ -57,6 +57,7 @@ function render_view(): void
 
     include_once($path_to_root . "/includes/ui/items_cart.inc");
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
+    include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
 
     $manager = new InflationFactorManager();
     $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
@@ -86,7 +87,7 @@ function render_view(): void
         var formData = new FormData(this);
         fetch(this.action, { method: 'POST', body: formData })
             .then(r => r.json())
-            .then(d => alert(d.success ? 'Rate saved' : d.error));
+            .then(d => alert(d.success ? 'Rate saved: ' + d.rate : d.error));
     });
     document.getElementById('import-form').addEventListener('submit', function(e) {
         e.preventDefault();

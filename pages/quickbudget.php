@@ -171,7 +171,7 @@ function handle_create(): void
 
 $entries = $service->generate($targetYear, $startMonth, $scenarioId);
 
-     // Debug: log the source year and count
+     // Debug: log source year and entry count
      error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
 
      // FR-14: Save to FA native budget tables
