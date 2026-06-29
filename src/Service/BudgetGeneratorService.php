@@ -9,10 +9,8 @@ declare(strict_types=1);
 
 namespace Ksfraser\FA\QuickBudget\Service;
 
-use InflationFactorManager;
-use BudgetEntryDTO;
-
 // Note: TB_PREF and db_* functions are global namespace
+// InflationFactorManager and BudgetEntryDTO are in global namespace
 
 final class BudgetGeneratorService
 {
@@ -95,10 +93,10 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        $sql = "SELECT account_type FROM " . \TB_PREF . "chart_master
-            WHERE account_code = '" . \mysqli_real_escape_string($db, $glAccount) . "'";
-        $result = \db_query($sql, null);
-        $row = \db_fetch_assoc($result);
+        $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
+            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
+        $result = db_query($sql, null);
+        $row = db_fetch_assoc($result);
 
         if (!$row) {
             return [false, false];
@@ -125,10 +123,10 @@ final class BudgetGeneratorService
             return 1.0;
         }
 
-        $sql = "SELECT multiplier FROM " . \TB_PREF . "ksf_quickbudget_scenarios
+        $sql = "SELECT multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios
             WHERE id = " . (int)$scenarioId;
-        $result = \db_query($sql, null);
-        $row = \db_fetch_assoc($result);
+        $result = db_query($sql, null);
+        $row = db_fetch_assoc($result);
 
         return $row ? (float)$row['multiplier'] : 1.0;
     }
@@ -158,7 +156,7 @@ final class BudgetGeneratorService
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0 && function_exists('add_update_gl_budget_trans')) {
                     $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    \add_update_gl_budget_trans(
+                    add_update_gl_budget_trans(
                         $date,
                         $entry->getGLAccount(),
                         0,
@@ -191,12 +189,12 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        $sql = "INSERT IGNORE INTO " . \TB_PREF . "ksf_quickbudget_approvals
+        $sql = "INSERT IGNORE INTO " . TB_PREF . "ksf_quickbudget_approvals
             (tran_date, gl_account, status)
-            VALUES ('" . \mysqli_real_escape_string($db, $tranDate) . "',
-                '" . \mysqli_real_escape_string($db, $glAccount) . "',
+            VALUES ('" . mysqli_real_escape_string($db, $tranDate) . "',
+                '" . mysqli_real_escape_string($db, $glAccount) . "',
                 'pending')";
-        \db_query($sql, null);
+        db_query($sql, null);
     }
 
     /**
@@ -209,12 +207,12 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        $sql = "SELECT DISTINCT account FROM " . \TB_PREF . "gl_trans
+        $sql = "SELECT DISTINCT account FROM " . TB_PREF . "gl_trans
             WHERE YEAR(tran_date) = " . (int)$year;
-        $result = \db_query($sql, null);
+        $result = db_query($sql, null);
 
         $accounts = [];
-        while ($row = \db_fetch_assoc($result)) {
+        while ($row = db_fetch_assoc($result)) {
             $accounts[] = $row['account'];
         }
 
@@ -226,14 +224,14 @@ final class BudgetGeneratorService
         global $db;
 
         $sql = "SELECT MONTH(tran_date) as month, SUM(amount) as total
-            FROM " . \TB_PREF . "gl_trans
-            WHERE account = '" . \mysqli_real_escape_string($db, $glAccount) . "'
+            FROM " . TB_PREF . "gl_trans
+            WHERE account = '" . mysqli_real_escape_string($db, $glAccount) . "'
             AND YEAR(tran_date) = " . (int)$year . "
             GROUP BY MONTH(tran_date)";
-        $result = \db_query($sql, null);
+        $result = db_query($sql, null);
 
         $monthly = [];
-        while ($row = \db_fetch_assoc($result)) {
+        while ($row = db_fetch_assoc($result)) {
             $monthly[(int)$row['month']] = (float)$row['total'];
         }
 
