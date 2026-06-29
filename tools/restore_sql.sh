@@ -52,7 +52,10 @@ in_create { next }
 # Skip lines for security/user tables
 skip_table { next }
 
-# Convert INSERT to INSERT IGNORE and change prefix
+# Convert INSERT to INSERT IGNORE and change prefix (handles both 1_ and 0_ source)
+/^INSERT INTO `0_/ {
+    gsub(/^INSERT INTO/, "INSERT IGNORE INTO")
+}
 /^INSERT INTO `1_/ {
     gsub(/`1_/, "`" target)
     gsub(/^INSERT INTO/, "INSERT IGNORE INTO")
