@@ -137,7 +137,7 @@ final class InflationFactorManager
     {
         // Check if we're in FA context (real $db connection)
         global $db;
-        if (!is_resource($db) && !($db instanceof \mysqli)) {
+        if (!is_resource($db) && !($db instanceof mysqli)) {
             return null; // Not in FA context, cannot determine category
         }
 

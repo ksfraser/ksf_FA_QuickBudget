@@ -12,9 +12,9 @@ $page_security = 'SA_KSF_QUICKBUDGETVIEW';
 include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
 
-// Load module classes
-require_once($path_to_root . '/modules/ksf_FA_QuickBudget/includes/InflationFactorManager.php');
-require_once($path_to_root . '/modules/ksf_FA_QuickBudget/src/Service/BudgetGeneratorService.php');
+// Load module classes (relative to pages directory)
+require_once('../includes/InflationFactorManager.php');
+require_once('../src/Service/BudgetGeneratorService.php');
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
