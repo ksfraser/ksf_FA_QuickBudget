@@ -105,6 +105,9 @@ class hooks_ksf_FA_QuickBudget extends hooks
                 $app->add_lapp_function(2, _("Quick Budget"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget.php",
                     'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
+                $app->add_lapp_function(3, _("Quick Budget Config"),
+                    $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_config.php",
+                    'SA_KSF_QUICKBUDGETMANAGE', MENU_SETTINGS);
                 break;
         }
     }
