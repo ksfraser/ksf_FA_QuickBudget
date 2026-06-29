@@ -18,6 +18,15 @@ if ($_ksf_quickbudget_is_ajax) {
             }
             return json_encode(array('error' => 'session_expired'));
         }
+        // Check for PHP errors that would break JSON parsing
+        if (preg_match('/^(<br\s*\/?>|\s*Fatal|<[^>]+error)/i', trim($html))) {
+            error_log("QuickBudget AJAX PHP error: " . $html);
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: application/json');
+            }
+            return json_encode(array('error' => 'Server error'));
+        }
         return $html;
     });
 }
