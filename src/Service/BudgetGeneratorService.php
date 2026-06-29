@@ -47,10 +47,10 @@ final class BudgetGeneratorService
 
         $entries = [];
 
-        // Get all GL accounts with actuals in source year
+// Get all GL accounts with actuals in source year
         $glAccounts = $this->getGLAccountsWithActuals($sourceYear);
 
-foreach ($glAccounts as $glAccount) {
+        foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
             [$isIncome, $isBalanceSheet] = $this->getAccountType($glAccount);
