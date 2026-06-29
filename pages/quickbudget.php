@@ -12,6 +12,10 @@ $page_security = 'SA_KSF_QUICKBUDGETVIEW';
 include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
 
+// Load module classes
+require_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
+require_once(dirname(__DIR__) . '/src/Service/BudgetGeneratorService.php');
+
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
 switch ($page) {
@@ -94,21 +98,20 @@ function handle_create(): void
             $completedMonths,
             $startMonth - 1
         );
-        header('Location: quickbudget.php?message=' . urlencode($message));
+        $msg = urlencode($message);
+        echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
         exit;
     }
 
     // FR-12: Check for existing budget - prompt if exists for months before startMonth
     $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
     if ($existingCount > 0 && $startMonth > 1) {
-        header('Location: quickbudget.php?message=' . urlencode(_("Budget already exists for some months. Delete existing entries first.")));
+        $msg = urlencode(_("Budget already exists for some months. Delete existing entries first."));
+        echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
         exit;
     }
 
     // FR-09: Generate budget
-    include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
-    include_once(__DIR__ . '/../src/Service/BudgetGeneratorService.php');
-
     $manager = new InflationFactorManager();
     $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
 
@@ -122,7 +125,8 @@ function handle_create(): void
     $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
 
     $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
-    header('Location: quickbudget.php?message=' . urlencode($message));
+    $msg = urlencode($message);
+    echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
     exit;
 }
 
