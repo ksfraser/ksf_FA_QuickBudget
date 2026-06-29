@@ -98,12 +98,17 @@ function render_view(): void
         e.preventDefault();
         var form = this;
         var formData = new FormData(form);
-        
+
         fetch(form.action, {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert(data.message);
@@ -113,12 +118,20 @@ function render_view(): void
                 if (confirm(data.message)) {
                     formData.set('confirmed', '1');
                     fetch(form.action, { method: 'POST', body: formData })
-                        .then(r => r.json())
-                        .then(d => alert(d.message));
+                        .then(r => {
+                            if (!r.ok) throw new Error('HTTP ' + r.status);
+                            return r.json();
+                        })
+                        .then(d => alert(d.message))
+                        .catch(err => alert('Error: ' + err.message));
                 }
             } else {
                 alert(data.error || 'Unknown error');
             }
+        })
+        .catch(err => {
+            console.error('Budget generation error:', err);
+            alert('Error: ' + err.message);
         });
     });
     </script>";
