@@ -56,6 +56,11 @@ function render_view(): void
     global $path_to_root;
 
     include_once($path_to_root . "/includes/ui/items_cart.inc");
+    include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
+
+    $manager = new InflationFactorManager();
+    $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
+    $currentRate = $manager->getDefaultRate();
 
     page(_("Quick Budget Configuration"), false, false, '', '');
 
@@ -65,7 +70,7 @@ function render_view(): void
     echo "<h4>" . _("Global Rate") . "</h4>";
     echo "<form id='global-form' method='post' action='quickbudget_config.php?action=save'>";
     echo "<input type='hidden' name='type' value='global'>";
-    echo "<input type='number' step='0.0001' name='rate' id='rate' value='1.0350' class='form-control'>";
+    echo "<input type='number' step='0.0001' name='rate' id='rate' value='" . htmlspecialchars((string)$currentRate) . "' class='form-control'>";
     echo "<input type='submit' class='btn btn-primary' value='" . _("Save Global Rate") . "'>";
     echo "</form>";
 
@@ -74,6 +79,23 @@ function render_view(): void
     echo "<input type='file' name='csv_file' accept='.csv' class='form-control'>";
     echo "<input type='submit' class='btn btn-secondary' value='" . _("Import") . "'>";
     echo "</form>";
+
+    echo "<script>
+    document.getElementById('global-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        fetch(this.action, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(d => alert(d.success ? 'Rate saved' : d.error));
+    });
+    document.getElementById('import-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        fetch(this.action, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(d => alert(d.success ? 'Imported ' + d.imported + ' factors' : d.error));
+    });
+    </script>";
 
     echo "</div>";
 

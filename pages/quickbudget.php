@@ -169,9 +169,12 @@ function handle_create(): void
 
     $service = new \Ksfraser\FA\QuickBudget\Service\BudgetGeneratorService($manager);
 
-    $entries = $service->generate($targetYear, $startMonth, $scenarioId);
+$entries = $service->generate($targetYear, $startMonth, $scenarioId);
 
-    // FR-14: Save to FA native budget tables
+     // Debug: log the source year and count
+     error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
+
+     // FR-14: Save to FA native budget tables
     $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
 
     $result = array(
