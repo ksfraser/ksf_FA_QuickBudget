@@ -141,15 +141,21 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        // Include FA's GL budget functions if path provided
-        error_log("QuickBudget saveToFABudget pathToRoot: $pathToRoot");
-        $glPath = $pathToRoot . "/gl/includes/db/gl_db_trans.inc";
-        error_log("QuickBudget GL path: $glPath");
-        if ($pathToRoot && file_exists($glPath)) {
-            error_log("QuickBudget including: $glPath");
-            include_once($glPath);
-        } else {
-            error_log("QuickBudget: GL include not found at $glPath");
+        // Try multiple paths to find FA's GL budget functions
+        $glPaths = [
+            $pathToRoot . "/gl/includes/db/gl_db_trans.inc",
+            $pathToRoot . "/modules/../../gl/includes/db/gl_db_trans.inc",
+        ];
+        foreach ($glPaths as $glPath) {
+            if ($glPath && file_exists($glPath)) {
+                error_log("QuickBudget including GL functions from: $glPath");
+                include_once($glPath);
+                break;
+            }
+        }
+        
+        if (!function_exists('add_update_gl_budget_trans')) {
+            error_log("QuickBudget: add_update_gl_budget_trans not available, using direct DB");
         }
 
         $count = 0;
@@ -170,11 +176,11 @@ final class BudgetGeneratorService
                             $amount
                         );
                     } else {
-                        // Direct DB insert as fallback - use date2sql format
-                        $sqlDate = date2sql($date);
+                        // Direct DB insert as fallback
+                        // Date format Y-m-d is already MySQL native format
                         $sql = "INSERT INTO " . TB_PREF . "budget_trans
                             (tran_date, account, dimension_id, dimension2_id, amount)
-                            VALUES ('$sqlDate',
+                            VALUES ('" . mysqli_real_escape_string($db, $date) . "',
                                 '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
                                 0, 0, " . (float)$amount . ")";
                         db_query($sql);
