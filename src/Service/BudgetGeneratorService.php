@@ -171,6 +171,7 @@ final class BudgetGeneratorService
 
                     // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
                     if (function_exists('add_update_gl_budget_trans')) {
+                        error_log("QuickBudget calling add_update_gl_budget_trans with date=$date, account=" . $entry->getGLAccount());
                         add_update_gl_budget_trans(
                             $date,
                             $entry->getGLAccount(),
@@ -180,14 +181,17 @@ final class BudgetGeneratorService
                         );
                     } else {
                         // Direct DB insert as fallback
-                        // Date format Y-m-d is already MySQL native format
+                        // Date format Y-m-d is MySQL native format
                         $sql = "INSERT INTO " . TB_PREF . "budget_trans
                             (tran_date, account, dimension_id, dimension2_id, amount)
                             VALUES ('" . mysqli_real_escape_string($db, $date) . "',
                                 '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
-                                0, 0, " . (float)$amount . ")";
-                        db_query($sql);
-                        error_log("QuickBudget direct DB insert: " . substr($sql, 0, 100));
+                                0, 0, " . (float)$amount . ")
+                            ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
+                        $result = db_query($sql);
+                        if (!$result) {
+                            error_log("QuickBudget DB ERROR: " . db_error_msg($db) . " SQL: " . substr($sql, 0, 200));
+                        }
                     }
 
                     // FR-21: Submit for approval if requested
