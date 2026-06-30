@@ -12,6 +12,12 @@ $page_security = 'SA_KSF_QUICKBUDGETVIEW';
 include_once($path_to_root . "/includes/session.inc");
 add_access_extensions();
 
+// Include FA GL budget functions for native budget save
+$glTransInc = $path_to_root . "/gl/includes/db/gl_db_trans.inc";
+if (file_exists($glTransInc)) {
+    include_once($glTransInc);
+}
+
 // Load module classes (relative to pages directory)
 // BudgetEntryDTO must be loaded first as BudgetGeneratorService depends on it
 require_once('../includes/BudgetEntryDTO.php');
