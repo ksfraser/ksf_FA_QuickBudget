@@ -226,13 +226,13 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        $sql = "SELECT DISTINCT account_code FROM " . TB_PREF . "gl_trans
+        $sql = "SELECT DISTINCT account FROM " . TB_PREF . "gl_trans
             WHERE YEAR(tran_date) = " . (int)$year;
         $result = db_query($sql, null);
 
         $accounts = [];
         while ($row = db_fetch_assoc($result)) {
-            $accounts[] = $row['account_code'];
+            $accounts[] = $row['account'];
         }
 
         return $accounts;
@@ -244,7 +244,7 @@ final class BudgetGeneratorService
 
         $sql = "SELECT MONTH(tran_date) as month, SUM(amount) as total
             FROM " . TB_PREF . "gl_trans
-            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'
+            WHERE account = '" . mysqli_real_escape_string($db, $glAccount) . "'
             AND YEAR(tran_date) = " . (int)$year . "
             GROUP BY MONTH(tran_date)";
         $result = db_query($sql, null);
