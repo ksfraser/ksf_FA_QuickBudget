@@ -143,6 +143,11 @@ function handle_create(): void
         $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
 
         $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
+        
+        // Verify actual DB rows
+        $verify = db_query("SELECT COUNT(*) as cnt FROM " . TB_PREF . "budget_trans WHERE YEAR(tran_date) = " . (int)$targetYear);
+        $verifyRow = db_fetch_assoc($verify);
+        error_log("QuickBudget verify: DB shows " . $verifyRow['cnt'] . " entries for year $targetYear");
         $msg = urlencode($message);
         echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
         exit;

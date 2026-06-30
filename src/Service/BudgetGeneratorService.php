@@ -154,12 +154,6 @@ final class BudgetGeneratorService
                 break;
             }
         }
-        
-        if (!function_exists('add_update_gl_budget_trans')) {
-            error_log("QuickBudget: add_update_gl_budget_trans not available, using direct DB");
-        } else {
-            error_log("QuickBudget: Will use add_update_gl_budget_trans");
-        }
 
         $count = 0;
         foreach ($entries as $entry) {
@@ -167,31 +161,29 @@ final class BudgetGeneratorService
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
                     $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    error_log("QuickBudget saving: date=$date, account=" . $entry->getGLAccount() . ", amount=$amount");
+                    // Convert Y-m-d to user format for add_update_gl_budget_trans
+                    $userDate = sql2dat($date);
+                    error_log("QuickBudget saving: sqlDate=$date, userDate=$userDate, account=" . $entry->getGLAccount() . ", amount=$amount");
 
-                    // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
+                    // Use FA's add_update_gl_budget_trans if available
                     if (function_exists('add_update_gl_budget_trans')) {
-                        error_log("QuickBudget calling add_update_gl_budget_trans with date=$date, account=" . $entry->getGLAccount());
                         add_update_gl_budget_trans(
-                            $date,
+                            $userDate,
                             $entry->getGLAccount(),
                             0,
                             0,
                             $amount
                         );
                     } else {
-                        // Direct DB insert as fallback
-                        // Date format Y-m-d is MySQL native format
+                        // Direct DB insert fallback - Y-m-d is MySQL native
                         $sql = "INSERT INTO " . TB_PREF . "budget_trans
                             (tran_date, account, dimension_id, dimension2_id, amount)
                             VALUES ('" . mysqli_real_escape_string($db, $date) . "',
                                 '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
                                 0, 0, " . (float)$amount . ")
                             ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
-                        $result = db_query($sql);
-                        if (!$result) {
-                            error_log("QuickBudget DB ERROR: " . db_error_msg($db) . " SQL: " . substr($sql, 0, 200));
-                        }
+                        db_query($sql);
+                        error_log("QuickBudget direct DB insert: " . substr($sql, 0, 100));
                     }
 
                     // FR-21: Submit for approval if requested
