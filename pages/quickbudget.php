@@ -135,11 +135,9 @@ function handle_create(): void
         $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
 
         $service = new BudgetGeneratorService($manager);
+        error_log("QuickBudget DEBUG: Calling generate(targetYear=$targetYear, startMonth=$startMonth, scenarioId=$scenarioId)");
         $entries = $service->generate($targetYear, $startMonth, $scenarioId);
-        error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
-
-        // Debug: log source year and entry count
-        error_log("QuickBudget DEBUG: targetYear=$targetYear, sourceYear=" . ($targetYear - 1) . ", entries=" . count($entries));
+        error_log("QuickBudget DEBUG: Generated " . count($entries) . " entries");
 
         // FR-14: Save to FA native budget tables
         $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
