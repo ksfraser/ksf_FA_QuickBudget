@@ -107,11 +107,12 @@ function handle_create(): void
         // FR-11: Validate source period has completed actuals
         $sourceYear = $targetYear - 1;
         $completedMonths = get_completed_months_for_year($sourceYear);
-        if ($completedMonths < $startMonth - 1) {
+        $requiredMonths = $startMonth;
+        if ($completedMonths < $requiredMonths) {
             $message = sprintf(
                 _("Cannot generate budget: source year has only %d completed months, need %d"),
                 $completedMonths,
-                $startMonth - 1
+                $requiredMonths
             );
             $msg = urlencode($message);
             echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";

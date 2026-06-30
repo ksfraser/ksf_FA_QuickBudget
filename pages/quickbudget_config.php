@@ -75,6 +75,94 @@ function render_view(): void
     echo "<input type='submit' class='btn btn-primary' value='" . _("Save Global Rate") . "'>";
     echo "</form>";
 
+    echo "<h4>" . _("Category Rate") . "</h4>";
+    echo "<form id='category-form' method='post' action='quickbudget_config.php?action=save'>";
+    echo "<input type='hidden' name='type' value='category'>";
+    echo "<select name='reference' id='category_ref' class='form-control'>";
+    $categories = ['Income', 'COGS', 'Expenses'];
+    foreach ($categories as $cat) {
+        $catRate = $manager->getCategoryRate($cat);
+        $selected = $catRate ? ' selected' : '';
+        echo "<option value='$cat'$selected>$cat</option>";
+    }
+    echo "</select>";
+    echo "<input type='number' step='0.0001' name='rate' id='category_rate' value='' class='form-control' placeholder='Rate'>";
+    echo "<input type='submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
+    echo "</form>";
+
+    echo "<h4>" . _("GL-Specific Rate") . "</h4>";
+    echo "<form id='gl-form' method='post' action='quickbudget_config.php?action=save'>";
+    echo "<input type='hidden' name='type' value='gl'>";
+    echo "<select name='reference' id='gl_ref' class='form-control'>";
+    $glResult = db_query("SELECT account_code, account_name FROM " . TB_PREF . "chart_master WHERE account_code IS NOT NULL ORDER BY account_code");
+    while ($glRow = db_fetch_assoc($glResult)) {
+        echo "<option value='" . htmlspecialchars($glRow['account_code']) . "'>" . htmlspecialchars($glRow['account_code'] . ' - ' . $glRow['account_name']) . "</option>";
+    }
+    echo "</select>";
+    echo "<input type='number' step='0.0001' name='rate' id='gl_rate' value='' class='form-control' placeholder='Rate'>";
+    echo "<input type='submit' class='btn btn-primary' value='" . _("Save GL Rate") . "'>";
+    echo "</form>";
+
+    $repo = new InflationFactorRepository();
+    $factors = $repo->getAllForCompany((int)($_SESSION['company'] ?? 0));
+
+    $perPage = (int)($_GET['per_page'] ?? 10);
+    $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+
+    // Category rates section
+    $catFactors = array_filter($factors, fn($f) => $f->getType() === 'category');
+    $catPage = (int)($_GET['cat_page'] ?? 1);
+    $catOffset = ($catPage - 1) * $perPage;
+    $catTotalPages = max(1, ceil(count($catFactors) / $perPage));
+    $catDisplay = array_slice($catFactors, $catOffset, $perPage);
+
+    echo "<h4>" . _("Category Rates") . "</h4>";
+    echo "<table class='table table-striped'>";
+    echo "<tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th></tr>";
+    foreach ($catDisplay as $f) {
+        echo "<tr><td>" . htmlspecialchars($f->getReferenceId()) . "</td><td>" . htmlspecialchars((string)$f->getRate()) . "</td></tr>";
+    }
+    echo "</table>";
+    if ($catTotalPages > 1) {
+        echo "<div>" . _("Pages:") . " ";
+        for ($i = 1; $i <= $catTotalPages; $i++) {
+            $active = $i === $catPage ? ' font-weight-bold' : '';
+            echo "<a href='quickbudget_config.php?cat_page=$i&per_page=$perPage' class='$active'>$i</a> ";
+        }
+        echo "</div>";
+    }
+
+    // GL rates section
+    $glFactors = array_filter($factors, fn($f) => $f->getType() === 'gl');
+    $glPageNum = (int)($_GET['gl_page'] ?? 1);
+    $glOffset = ($glPageNum - 1) * $perPage;
+    $glTotalPages = max(1, ceil(count($glFactors) / $perPage));
+    $glDisplay = array_slice($glFactors, $glOffset, $perPage);
+
+    echo "<h4>" . _("GL-Specific Rates") . "</h4>";
+    echo "<table class='table table-striped'>";
+    echo "<tr><th>" . _("GL Account") . "</th><th>" . _("Rate") . "</th></tr>";
+    foreach ($glDisplay as $f) {
+        echo "<tr><td>" . htmlspecialchars($f->getReferenceId()) . "</td><td>" . htmlspecialchars((string)$f->getRate()) . "</td></tr>";
+    }
+    echo "</table>";
+    if ($glTotalPages > 1) {
+        echo "<div>" . _("Pages:") . " ";
+        for ($i = 1; $i <= $glTotalPages; $i++) {
+            $active = $i === $glPageNum ? ' font-weight-bold' : '';
+            echo "<a href='quickbudget_config.php?gl_page=$i&per_page=$perPage' class='$active'>$i</a> ";
+        }
+        echo "</div>";
+    }
+
+    // Per page selector (affects both)
+    echo "<div>" . _("Per page:") . " ";
+    foreach ([10, 25, 50, 100] as $pp) {
+        $active = $pp === $perPage ? ' font-weight-bold' : '';
+        echo "<a href='quickbudget_config.php?per_page=$pp' class='$active'>$pp</a> ";
+    }
+    echo "</div>";
+
     echo "<h4>" . _("Import from CSV") . "</h4>";
     echo "<form id='import-form' method='post' action='quickbudget_config.php?action=import' enctype='multipart/form-data'>";
     echo "<input type='file' name='csv_file' accept='.csv' class='form-control'>";
@@ -82,13 +170,18 @@ function render_view(): void
     echo "</form>";
 
     echo "<script>
-    document.getElementById('global-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        var formData = new FormData(this);
-        fetch(this.action, { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(d => alert(d.success ? 'Rate saved: ' + d.rate : d.error));
-    });
+    function handleAjax(formId, successMsg) {
+        document.getElementById(formId).addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            fetch(this.action, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(d => alert(d.success ? successMsg + d.rate : d.error));
+        });
+    }
+    handleAjax('global-form', 'Rate saved: ');
+    handleAjax('category-form', 'Category rate saved: ');
+    handleAjax('gl-form', 'GL rate saved: ');
     document.getElementById('import-form').addEventListener('submit', function(e) {
         e.preventDefault();
         var formData = new FormData(this);

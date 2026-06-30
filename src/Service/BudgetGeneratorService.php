@@ -226,32 +226,25 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        $sql = "SELECT DISTINCT account FROM " . TB_PREF . "gl_trans
+        $sql = "SELECT DISTINCT account_code FROM " . TB_PREF . "gl_trans
             WHERE YEAR(tran_date) = " . (int)$year;
         $result = db_query($sql, null);
 
         $accounts = [];
         while ($row = db_fetch_assoc($result)) {
-            $accounts[] = $row['account'];
+            $accounts[] = $row['account_code'];
         }
 
         return $accounts;
     }
 
-    /**
-     * Get monthly actuals for a GL account.
-     *
-     * @param string $glAccount GL account code
-     * @param int $year
-     * @return array<int, float> Monthly amounts indexed 1-12
-     */
     private function getActualsByGL(string $glAccount, int $year): array
     {
         global $db;
 
         $sql = "SELECT MONTH(tran_date) as month, SUM(amount) as total
             FROM " . TB_PREF . "gl_trans
-            WHERE account = '" . mysqli_real_escape_string($db, $glAccount) . "'
+            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'
             AND YEAR(tran_date) = " . (int)$year . "
             GROUP BY MONTH(tran_date)";
         $result = db_query($sql, null);

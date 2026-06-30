@@ -86,11 +86,10 @@ class hooks_ksf_FA_QuickBudget extends hooks
 
     /**
      * install_tabs : Add a new top-level FA application tab.
-     * Only override if your module adds a new tab to the FA navigation bar.
      */
     function install_tabs($app)
     {
-        // No custom tab - using install_options under GL instead
+        // No tab - items under GL via install_options
     }
 
     /**
@@ -102,16 +101,16 @@ class hooks_ksf_FA_QuickBudget extends hooks
 
         switch ($app->id) {
             case 'GL':
-                $app->add_lapp_function(2, _("Quick Budget"),
+                $app->add_lapp_function(4, _("Quick Budget"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget.php",
                     'SA_KSF_QUICKBUDGETVIEW', MENU_ENTRY);
-                $app->add_lapp_function(3, _("Quick Budget Compare"),
+                $app->add_lapp_function(4, _("Compare Budget"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_compare.php",
                     'SA_KSF_QUICKBUDGETVIEW', MENU_INQUIRY);
-                $app->add_lapp_function(4, _("Quick Budget Approval"),
+                $app->add_rapp_function(4, _("Budget Approval"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_approve.php",
                     'SA_KSF_QUICKBUDGETMANAGE', MENU_INQUIRY);
-                $app->add_lapp_function(5, _("Quick Budget Config"),
+                $app->add_rapp_function(4, _("Budget Config"),
                     $path_to_root . "/modules/" . $this->module_name . "/pages/quickbudget_config.php",
                     'SA_KSF_QUICKBUDGETMANAGE', MENU_SETTINGS);
                 break;
@@ -167,22 +166,3 @@ class hooks_ksf_FA_QuickBudget extends hooks
         return true;
     }
 }
-
-// ===========================================================================
-// 5. Application class : Only needed if install_tabs() adds a new tab
-// ===========================================================================
-// Uncomment and customise if your module creates a new top-level FA tab.
-//
-// class ksf_QuickBudget_app extends application {
-//     function __construct() {
-//         parent::__construct("<TabId>",
-//             _($this->help_context = "&<TabLabel>"));
-//
-//         $this->add_module(_("<SectionName>"));
-//         $this->add_lapp_function(0, _("&Page Title"),
-//             "modules/ksf_FA_ksf_QuickBudget/page.php",
-//             'SA_KSF_QUICKBUDGETVIEW', MENU_MAIN);
-//
-//         $this->add_extensions();
-//     }
-// }

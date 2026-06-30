@@ -85,15 +85,26 @@ final class InflationFactorManager
         $this->glRates[$glAccount] = $rate;
     }
 
-    /**
-     * Get the global default rate.
-     * FR-01 support.
-     *
-     * @return float Default rate
-     */
+/**
+      * Get the global default rate.
+      * FR-01 support.
+      *
+      * @return float Default rate
+      */
     public function getDefaultRate(): float
     {
         return $this->globalRate;
+    }
+
+    /**
+      * Get category rate.
+      *
+      * @param string $category Category name
+      * @return float|null Rate or null if not set
+      */
+    public function getCategoryRate(string $category): ?float
+    {
+        return $this->categoryRates[$category] ?? null;
     }
 
     /**
