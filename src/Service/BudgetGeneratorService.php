@@ -160,38 +160,39 @@ final class BudgetGeneratorService
             $monthlyAmounts = $entry->getMonthlyAmounts();
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
-                    $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    // Convert Y-m-d to user format for add_update_gl_budget_trans
-                    $userDate = sql2dat($date);
-                    error_log("QuickBudget saving: sqlDate=$date, userDate=$userDate, account=" . $entry->getGLAccount() . ", amount=$amount");
-
-                    // Use FA's add_update_gl_budget_trans if available
-                    if (function_exists('add_update_gl_budget_trans')) {
-                        add_update_gl_budget_trans(
-                            $userDate,
-                            $entry->getGLAccount(),
-                            0,
-                            0,
-                            $amount
-                        );
-                    } else {
-                        // Direct DB insert fallback - Y-m-d is MySQL native
-                        $sql = "INSERT INTO " . TB_PREF . "budget_trans
-                            (tran_date, account, dimension_id, dimension2_id, amount)
-                            VALUES ('" . mysqli_real_escape_string($db, $date) . "',
-                                '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
-                                0, 0, " . (float)$amount . ")
-                            ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
-                        db_query($sql);
-                        error_log("QuickBudget direct DB insert: " . substr($sql, 0, 100));
+                    $sqlDate = sprintf('%04d-%02d-01', $entry->getYear(), $month);
+                    // Default to sqlDate if sql2dat fails
+                    $userDate = function_exists('sql2dat') ? sql2dat($sqlDate) : $sqlDate;
+                    if (empty($userDate)) {
+                        $userDate = $sqlDate;
                     }
+                    error_log("QuickBudget saving: sqlDate=$sqlDate, userDate=$userDate, account=" . $entry->getGLAccount() . ", amount=$amount");
 
-                    // FR-21: Submit for approval if requested
-                    if ($submitForApproval) {
+                    // Always use direct DB insert for reliable date handling
+                    $sql = "INSERT INTO " . TB_PREF . "budget_trans
+                        (tran_date, account, dimension_id, dimension2_id, amount)
+                        VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
+                            '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
+                            0, 0, " . (float)$amount . ")
+                        ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
+                    $result = db_query($sql);
+                    if (!$result) {
+                        error_log("QuickBudget DB ERROR: " . db_error_msg($db) . " SQL: $sql");
+                    }
+                    $count++;
+                }
+            }
+        }
+
+        // FR-21: Submit for approval if requested
+        if ($submitForApproval) {
+            foreach ($entries as $entry) {
+                $monthlyAmounts = $entry->getMonthlyAmounts();
+                foreach ($monthlyAmounts as $month => $amount) {
+                    if ($amount != 0.0) {
+                        $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
                         $this->submitForApproval($date, $entry->getGLAccount());
                     }
-
-                    $count++;
                 }
             }
         }
