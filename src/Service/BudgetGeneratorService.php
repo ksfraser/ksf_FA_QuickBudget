@@ -89,11 +89,6 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        // Defend against null/missing $db
-        if (!isset($db) || !is_resource($db) && !($db instanceof mysqli)) {
-            return [false, false];
-        }
-
         $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
         $result = db_query($sql, null);
