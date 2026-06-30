@@ -65,7 +65,7 @@ class hooks_ksf_FA_QuickBudget extends hooks
     use HookQueryProviderTrait;
 
     var $module_name = 'ksf_FA_QuickBudget';
-    var $version     = '0.1.0';
+    var $version     = '0.2.0';
 
     /**
      * Return advertised values for the KSF query hook system.

@@ -3,9 +3,9 @@
  * InflationFactorManager
  *
  * Manages inflation factor configuration and resolution.
- * Supports FR-01 through FR-07.
+ * Supports FR-01 through FR-04.
  *
- * @see RTM.md - FR-01 to FR-07
+ * @see RTM.md - FR-01 to FR-04
  */
 declare(strict_types=1);
 
@@ -101,6 +101,21 @@ class InflationFactorManager
     public function setGroupRate(string $group, float $rate): void
     {
         $this->groupRates[$group] = $rate;
+    }
+
+    /**
+     * Get all rates as array for session storage.
+     *
+     * @return array All rates indexed by type and reference
+     */
+    public function getAllRates(): array
+    {
+        return [
+            'global' => $this->globalRate,
+            'group' => $this->groupRates,
+            'category' => $this->categoryRates,
+            'gl' => $this->glRates,
+        ];
     }
 
     /**

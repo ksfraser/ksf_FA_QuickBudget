@@ -1,0 +1,49 @@
+<?php
+/**
+ * GroupRepository
+ *
+ * Repository for GL group data from chart_types.
+ * Supports FR-03.
+ */
+declare(strict_types=1);
+
+final class GroupRepository
+{
+    /**
+     * Get all groups (class_id) with their names.
+     *
+     * @return array<string, string> Group ID => name
+     */
+    public function getAllGroups(): array
+    {
+        global $db;
+
+        $result = db_query("SELECT DISTINCT class_id, name FROM " . TB_PREF . "chart_types
+            WHERE class_id IS NOT NULL AND class_id > 0
+            ORDER BY class_id");
+
+        $groups = [];
+        while ($row = db_fetch_assoc($result)) {
+            $groups[$row['class_id']] = $row['name'];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Get group name by class_id.
+     *
+     * @param string $classId Group class_id
+     * @return string|null Group name or null
+     */
+    public function getGroupName(string $classId): ?string
+    {
+        global $db;
+
+        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types
+            WHERE class_id = '" . mysqli_real_escape_string($db, $classId) . "'");
+        $row = db_fetch_assoc($result);
+
+        return $row ? $row['name'] : null;
+    }
+}

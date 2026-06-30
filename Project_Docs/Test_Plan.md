@@ -11,10 +11,12 @@
 ### 1-1. InflationFactorManager
 | Test | Description |
 |------|-------------|
-| `testGetGlobalFactorReturnsDefault` | Verify default rate when no overrides exist |
-| `testGetCategoryFactorOverridesGlobal` | Category factor takes precedence over global |
-| `testGetGLFactorOverridesCategory` | GL-specific factor takes highest precedence |
-| `testImportFactorsFromCSV` | CSV import creates factor records |
+| `testGetDefaultRateReturnsConfiguredGlobalRate` | Verify default rate when no overrides exist |
+| `testGetRateReturnsCategoryRateWhenNoGLSpecific` | Category factor takes precedence over global |
+| `testSetGroupRateStoresGroupRate` | Group rate stored correctly |
+| `testGLRateOverridesCategoryAndGroup` | GL-specific factor takes highest precedence |
+| `testSetGLRateStoresGLRate` | GL rate stored correctly |
+| `testGetAllRatesReturnsAllTypes` | All rate types returned for session storage |
 
 ### 1-2. QuickBudgetService
 | Test | Description |

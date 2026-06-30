@@ -42,12 +42,29 @@ final class InflationFactorManagerTest extends TestCase
     }
 
     /**
-     * FR-03: Configure GL-specific inflation factors (highest precedence)
-     * @testdox getRate returns GL-specific rate overriding category
+     * FR-03: Configure group-level inflation factors (between category and global)
+     * Tests that setGroupRate stores rates correctly.
+     * @testdox setGroupRate stores group rate for retrieval
      */
-    public function testGetRateReturnsGLSpecificRateOverridingCategory(): void
+    public function testSetGroupRateStoresGroupRate(): void
     {
         $this->manager->setGlobalRate(1.0200);
+        $this->manager->setGroupRate('1', 1.0400);
+
+        $all = $this->manager->getAllRates();
+        $this->assertArrayHasKey('group', $all);
+        $this->assertArrayHasKey('1', $all['group']);
+        $this->assertEquals(1.0400, $all['group']['1']);
+    }
+
+    /**
+     * FR-03: GL rate overrides category and group
+     * @testdox GL-specific rate overrides category and group rates
+     */
+    public function testGLRateOverridesCategoryAndGroup(): void
+    {
+        $this->manager->setGlobalRate(1.0200);
+        $this->manager->setGroupRate('1', 1.0400);
         $this->manager->setCategoryRate('Expenses', 1.0500);
         $this->manager->setGLRate('6000', 1.1000);
 
@@ -61,5 +78,21 @@ final class InflationFactorManagerTest extends TestCase
     public function testGetDefaultRateReturnsOneWhenNotConfigured(): void
     {
         $this->assertEquals(1.0, $this->manager->getDefaultRate());
+    }
+
+    /**
+     * FR-04: Configure GL-specific inflation factors (highest precedence)
+     * Tests that setGLRate stores rates correctly.
+     * @testdox setGLRate stores GL rate for retrieval
+     */
+    public function testSetGLRateStoresGLRate(): void
+    {
+        $this->manager->setGlobalRate(1.0200);
+        $this->manager->setGLRate('6000', 1.1000);
+
+        $all = $this->manager->getAllRates();
+        $this->assertArrayHasKey('gl', $all);
+        $this->assertArrayHasKey('6000', $all['gl']);
+        $this->assertEquals(1.1000, $all['gl']['6000']);
     }
 }
