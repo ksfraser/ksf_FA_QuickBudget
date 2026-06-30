@@ -142,9 +142,10 @@ final class BudgetGeneratorService
         global $db;
 
         // Try multiple paths to find FA's GL budget functions
+        // Path from modules/ksf_FA_QuickBudget/pages/ to gl/includes/db/gl_db_trans.inc
         $glPaths = [
-            $pathToRoot . "/gl/includes/db/gl_db_trans.inc",
-            $pathToRoot . "/modules/../../gl/includes/db/gl_db_trans.inc",
+            $pathToRoot . '/gl/includes/db/gl_db_trans.inc',
+            dirname(dirname(dirname(__DIR__))) . '/gl/includes/db/gl_db_trans.inc',
         ];
         foreach ($glPaths as $glPath) {
             if ($glPath && file_exists($glPath)) {
@@ -156,6 +157,8 @@ final class BudgetGeneratorService
         
         if (!function_exists('add_update_gl_budget_trans')) {
             error_log("QuickBudget: add_update_gl_budget_trans not available, using direct DB");
+        } else {
+            error_log("QuickBudget: Will use add_update_gl_budget_trans");
         }
 
         $count = 0;
