@@ -126,7 +126,7 @@ final class BudgetGeneratorService
                         ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
                     $result = db_query($sql);
                     if (!$result) {
-                        error_log("QuickBudget ERROR: " . db_error_msg($db) . " SQL: $sql");
+                        error_log("QuickBudget ERROR: SQL: $sql");
                     }
                     $count++;
                 }
