@@ -42,12 +42,10 @@ final class BudgetGeneratorService
 
         // Get all GL accounts with actuals in source year
         $glAccounts = $this->getGLAccountsWithActuals($sourceYear);
-        error_log("QuickBudget DEBUG generate: sourceYear=$sourceYear, glAccounts count=" . count($glAccounts) . ", sample=" . implode(',', array_slice($glAccounts, 0, 3)));
 
         foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
-            error_log("QuickBudget DEBUG: GL=$glAccount, inflationRate=$inflationRate, scenarioMultiplier=$scenarioMultiplier");
 
             $budgetAmounts = [];
             for ($month = $startMonth; $month <= 12; $month++) {
