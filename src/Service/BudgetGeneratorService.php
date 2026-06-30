@@ -141,43 +141,31 @@ final class BudgetGeneratorService
     {
         global $db;
 
-        // Try multiple paths to find FA's GL budget functions
-        // Path from modules/ksf_FA_QuickBudget/pages/ to gl/includes/db/gl_db_trans.inc
-        $glPaths = [
-            $pathToRoot . '/gl/includes/db/gl_db_trans.inc',
-            dirname(dirname(dirname(__DIR__))) . '/gl/includes/db/gl_db_trans.inc',
-        ];
-        foreach ($glPaths as $glPath) {
-            if ($glPath && file_exists($glPath)) {
-                error_log("QuickBudget including GL functions from: $glPath");
-                include_once($glPath);
-                break;
-            }
-        }
-
         $count = 0;
         foreach ($entries as $entry) {
             $monthlyAmounts = $entry->getMonthlyAmounts();
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
                     $sqlDate = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    // Default to sqlDate if sql2dat fails
-                    $userDate = function_exists('sql2dat') ? sql2dat($sqlDate) : $sqlDate;
-                    if (empty($userDate)) {
-                        $userDate = $sqlDate;
-                    }
-                    error_log("QuickBudget saving: sqlDate=$sqlDate, userDate=$userDate, account=" . $entry->getGLAccount() . ", amount=$amount");
 
-                    // Always use direct DB insert for reliable date handling
-                    $sql = "INSERT INTO " . TB_PREF . "budget_trans
-                        (tran_date, account, dimension_id, dimension2_id, amount)
-                        VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
-                            '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
-                            0, 0, " . (float)$amount . ")
-                        ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
-                    $result = db_query($sql);
-                    if (!$result) {
-                        error_log("QuickBudget DB ERROR: " . db_error_msg($db) . " SQL: $sql");
+                    // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
+                    if (function_exists('add_update_gl_budget_trans')) {
+                        add_update_gl_budget_trans(
+                            $sqlDate,
+                            $entry->getGLAccount(),
+                            0,
+                            0,
+                            $amount
+                        );
+                    } else {
+                        // Direct DB insert fallback
+                        $sql = "INSERT INTO " . TB_PREF . "budget_trans
+                            (tran_date, account, dimension_id, dimension2_id, amount)
+                            VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
+                                '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
+                                0, 0, " . (float)$amount . ")
+                            ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
+                        db_query($sql);
                     }
                     $count++;
                 }
