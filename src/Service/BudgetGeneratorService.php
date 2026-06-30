@@ -158,7 +158,8 @@ final class BudgetGeneratorService
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
                     $date = sprintf('%04d-%02d-01', $entry->getYear(), $month);
-                    
+                    error_log("QuickBudget saving: date=$date, account=" . $entry->getGLAccount() . ", amount=$amount");
+
                     // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
                     if (function_exists('add_update_gl_budget_trans')) {
                         add_update_gl_budget_trans(
@@ -169,10 +170,11 @@ final class BudgetGeneratorService
                             $amount
                         );
                     } else {
-                        // Direct DB insert as fallback
+                        // Direct DB insert as fallback - use date2sql format
+                        $sqlDate = date2sql($date);
                         $sql = "INSERT INTO " . TB_PREF . "budget_trans
                             (tran_date, account, dimension_id, dimension2_id, amount)
-                            VALUES ('" . mysqli_real_escape_string($db, $date) . "',
+                            VALUES ('$sqlDate',
                                 '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
                                 0, 0, " . (float)$amount . ")";
                         db_query($sql);
