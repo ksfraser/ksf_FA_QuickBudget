@@ -47,22 +47,22 @@ final class BudgetGeneratorService
         foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
-            [$isIncome, $isBalanceSheet] = $this->getAccountType($glAccount);
+            error_log("QuickBudget DEBUG: GL=$glAccount, inflationRate=$inflationRate, scenarioMultiplier=$scenarioMultiplier");
 
             $budgetAmounts = [];
             for ($month = $startMonth; $month <= 12; $month++) {
                 $actualAmount = $actuals[$month] ?? 0.0;
-                // Balance sheet accounts: scenario has no effect (1.0)
-                if ($isBalanceSheet) {
-                    $effectiveMultiplier = 1.0;
-                } elseif ($isIncome) {
-                    // Income: inverse multiplier (pessimistic = lower income)
-                    $effectiveMultiplier = 1.0 / max($scenarioMultiplier, 0.01);
-                } else {
-                    // Expenses: direct multiplier (pessimistic = higher expenses)
-                    $effectiveMultiplier = $scenarioMultiplier;
+                
+                // Convert percentage to multiplier: 3% -> 1.03
+                $rateMultiplier = $inflationRate;
+                if ($inflationRate > 10 && $inflationRate <= 100) {
+                    $rateMultiplier = 1.0 + ($inflationRate / 100.0);
                 }
-                $budgetAmounts[$month] = $actualAmount * $inflationRate * $effectiveMultiplier;
+                
+                // Apply scenario: if rate is 0 (fixed contract), no scenario adjustment
+                $effectiveScenario = $inflationRate == 0 ? 1.0 : $scenarioMultiplier;
+                
+                $budgetAmounts[$month] = $actualAmount * $rateMultiplier * $effectiveScenario;
             }
 
             $entries[] = new BudgetEntryDTO(

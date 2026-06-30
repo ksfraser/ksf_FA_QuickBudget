@@ -7,7 +7,7 @@
  */
 declare(strict_types=1);
 
-final class BudgetEntryDTO
+class BudgetEntryDTO
 {
     /** @var string GL account code */
     private $glAccount;

@@ -7,7 +7,6 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use Ksfraser\FA\QuickBudget\Service\BudgetGeneratorService;
 
 final class BudgetGeneratorServiceTest extends TestCase
 {

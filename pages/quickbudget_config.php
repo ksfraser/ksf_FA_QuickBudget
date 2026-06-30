@@ -3,7 +3,7 @@
  * QuickBudget Config Page
  *
  * Configuration screen for inflation factors.
- * Supports FR-01 through FR-06.
+ * Supports FR-01 through FR-07.
  */
 declare(strict_types=1);
 
@@ -79,7 +79,7 @@ function render_view(): void
     echo "<form id='category-form' method='post' action='quickbudget_config.php?action=save'>";
     echo "<input type='hidden' name='type' value='category'>";
     echo "<select name='reference' id='category_ref' class='form-control'>";
-    $categories = ['Income', 'COGS', 'Expenses'];
+    $categories = ['Income', 'COGS', 'Expenses', 'Assets'];
     foreach ($categories as $cat) {
         $catRate = $manager->getCategoryRate($cat);
         $selected = $catRate ? ' selected' : '';
@@ -88,6 +88,19 @@ function render_view(): void
     echo "</select>";
     echo "<input type='number' step='0.0001' name='rate' id='category_rate' value='' class='form-control' placeholder='Rate'>";
     echo "<input type='submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
+    echo "</form>";
+
+    echo "<h4>" . _("Group Rate") . "</h4>";
+    echo "<form id='group-form' method='post' action='quickbudget_config.php?action=save'>";
+    echo "<input type='hidden' name='type' value='group'>";
+    echo "<select name='reference' id='group_ref' class='form-control'>";
+    $groupResult = db_query("SELECT DISTINCT class_id, name FROM " . TB_PREF . "chart_types WHERE class_id IS NOT NULL AND class_id > 0 ORDER BY class_id");
+    while ($groupRow = db_fetch_assoc($groupResult)) {
+        echo "<option value='" . htmlspecialchars($groupRow['class_id']) . "'>" . htmlspecialchars($groupRow['name'] . ' (' . $groupRow['class_id'] . ')') . "</option>";
+    }
+    echo "</select>";
+    echo "<input type='number' step='0.0001' name='rate' id='group_rate' value='' class='form-control' placeholder='Rate'>";
+    echo "<input type='submit' class='btn btn-primary' value='" . _("Save Group Rate") . "'>";
     echo "</form>";
 
     echo "<h4>" . _("GL-Specific Rate") . "</h4>";
@@ -128,6 +141,29 @@ function render_view(): void
         for ($i = 1; $i <= $catTotalPages; $i++) {
             $active = $i === $catPage ? ' font-weight-bold' : '';
             echo "<a href='quickbudget_config.php?cat_page=$i&per_page=$perPage' class='$active'>$i</a> ";
+        }
+        echo "</div>";
+    }
+
+    // Group rates section
+    $groupFactors = array_filter($factors, fn($f) => $f->getType() === 'group');
+    $groupPage = (int)($_GET['group_page'] ?? 1);
+    $groupOffset = ($groupPage - 1) * $perPage;
+    $groupTotalPages = max(1, ceil(count($groupFactors) / $perPage));
+    $groupDisplay = array_slice($groupFactors, $groupOffset, $perPage);
+
+    echo "<h4>" . _("Group Rates") . "</h4>";
+    echo "<table class='table table-striped'>";
+    echo "<tr><th>" . _("Group ID") . "</th><th>" . _("Rate") . "</th></tr>";
+    foreach ($groupDisplay as $f) {
+        echo "<tr><td>" . htmlspecialchars($f->getReferenceId()) . "</td><td>" . htmlspecialchars((string)$f->getRate()) . "</td></tr>";
+    }
+    echo "</table>";
+    if ($groupTotalPages > 1) {
+        echo "<div>" . _("Pages:") . " ";
+        for ($i = 1; $i <= $groupTotalPages; $i++) {
+            $active = $i === $groupPage ? ' font-weight-bold' : '';
+            echo "<a href='quickbudget_config.php?group_page=$i&per_page=$perPage' class='$active'>$i</a> ";
         }
         echo "</div>";
     }
@@ -181,6 +217,7 @@ function render_view(): void
     }
     handleAjax('global-form', 'Rate saved: ');
     handleAjax('category-form', 'Category rate saved: ');
+    handleAjax('group-form', 'Group rate saved: ');
     handleAjax('gl-form', 'GL rate saved: ');
     document.getElementById('import-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -198,7 +235,7 @@ function render_view(): void
 
 function handle_save(): void
 {
-    // FR-01, FR-02, FR-03, FR-05: Save inflation factor
+    // FR-01, FR-02, FR-03, FR-04: Save inflation factor
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
     include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
     include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
@@ -220,6 +257,10 @@ function handle_save(): void
             $manager->setCategoryRate($reference, $rate);
             $factor = new InflationFactorDTO($type, $reference, $rate, $company);
             break;
+        case 'group':
+            $manager->setGroupRate($reference, $rate);
+            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
+            break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
             $factor = new InflationFactorDTO($type, $reference, $rate, $company);
@@ -239,7 +280,7 @@ function handle_save(): void
 
 function handle_import(): void
 {
-    // FR-04: Import inflation factors from CSV
+    // FR-05: Import inflation factors from CSV
     include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
     include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
 
@@ -274,7 +315,7 @@ function handle_import(): void
 
 function handle_export(): void
 {
-    // FR-06: Export inflation factors to CSV
+    // FR-07: Export inflation factors to CSV
     include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
     $repo = new InflationFactorRepository();
 

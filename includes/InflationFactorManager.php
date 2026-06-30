@@ -3,13 +3,13 @@
  * InflationFactorManager
  *
  * Manages inflation factor configuration and resolution.
- * Supports FR-01 through FR-06.
+ * Supports FR-01 through FR-07.
  *
- * @see RTM.md - FR-01 to FR-06
+ * @see RTM.md - FR-01 to FR-07
  */
 declare(strict_types=1);
 
-final class InflationFactorManager
+class InflationFactorManager
 {
     /** @var float Default rate (1.0 = no inflation) */
     private $globalRate = 1.0;
@@ -19,6 +19,9 @@ final class InflationFactorManager
 
     /** @var array<string, float> GL-specific rates indexed by account code */
     private $glRates = [];
+
+    /** @var array<string, float> Group rates indexed by group ID */
+    private $groupRates = [];
 
     /**
      * Load rates from database for a company.
@@ -39,6 +42,9 @@ final class InflationFactorManager
             switch ($row['factor_type']) {
                 case 'global':
                     $this->globalRate = $rate;
+                    break;
+                case 'group':
+                    $this->groupRates[$row['reference_id']] = $rate;
                     break;
                 case 'category':
                     $this->categoryRates[$row['reference_id']] = $rate;
@@ -85,23 +91,35 @@ final class InflationFactorManager
         $this->glRates[$glAccount] = $rate;
     }
 
-/**
-      * Get the global default rate.
-      * FR-01 support.
-      *
-      * @return float Default rate
-      */
+    /**
+     * Set a group-level inflation rate.
+     *
+     * @param string $group Group ID (chart_types.class_id)
+     * @param float $rate Rate multiplier
+     * @return void
+     */
+    public function setGroupRate(string $group, float $rate): void
+    {
+        $this->groupRates[$group] = $rate;
+    }
+
+    /**
+     * Get the global default rate.
+     * FR-01 support.
+     *
+     * @return float Default rate
+     */
     public function getDefaultRate(): float
     {
         return $this->globalRate;
     }
 
     /**
-      * Get category rate.
-      *
-      * @param string $category Category name
-      * @return float|null Rate or null if not set
-      */
+     * Get category rate.
+     *
+     * @param string $category Category name
+     * @return float|null Rate or null if not set
+     */
     public function getCategoryRate(string $category): ?float
     {
         return $this->categoryRates[$category] ?? null;
@@ -109,22 +127,32 @@ final class InflationFactorManager
 
     /**
      * Get effective rate for a GL account.
-     * Resolves hierarchy: GL → Category → Global.
+     * Resolves hierarchy: GL → Group → Category → Global.
      *
      * @param string $glAccount GL account code
      * @return float Effective inflation rate
      */
     public function getRateForAccount(string $glAccount): float
     {
-        // FR-03: GL-specific takes highest precedence
+        // Hierarchy: GL → Group → Category → Global
+        
+        // GL-specific takes highest precedence
         if (isset($this->glRates[$glAccount])) {
             return $this->glRates[$glAccount];
         }
 
-        // FR-02: Category-level override based on account type
-        $category = $this->getAccountCategory($glAccount);
-        if ($category && isset($this->categoryRates[$category])) {
-            return $this->categoryRates[$category];
+        // Get account's group and category
+        $accountGroup = $this->getAccountGroup($glAccount);
+        
+        // Group-level override (from chart_types.class_id)
+        if ($accountGroup && isset($this->groupRates[$accountGroup])) {
+            return $this->groupRates[$accountGroup];
+        }
+
+        // Category-level override based on account type
+        $accountCategory = $this->getAccountCategory($glAccount);
+        if ($accountCategory && isset($this->categoryRates[$accountCategory])) {
+            return $this->categoryRates[$accountCategory];
         }
 
         // Fall back to checking generic 'Expenses' category for backward compatibility
@@ -132,7 +160,7 @@ final class InflationFactorManager
             return $this->categoryRates['Expenses'];
         }
 
-        // FR-01: Fall back to global default
+        // Fall back to global default
         return $this->globalRate;
     }
 
@@ -168,8 +196,37 @@ final class InflationFactorManager
             7 => 'COGS',        // COGS
             8 => 'Expenses',    // Expense
             10 => 'Expenses',    // Other Expense
+            0 => 'Assets',      // Bank
+            1 => 'Assets',      // Cash
+            2 => 'Assets',      // Receivables
+            3 => 'Assets',      // Payables
+            6 => 'Assets',      // Inventory
         ];
 
         return $typeMap[(int)$row['account_type']] ?? null;
+    }
+
+    /**
+     * Get account group from chart_types table.
+     * Returns the class_id for the GL account (account_type maps to chart_types.id).
+     *
+     * @param string $glAccount GL account code
+     * @return string|null Group ID or null
+     */
+    private function getAccountGroup(string $glAccount): ?string
+    {
+        global $db;
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
+        // Get chart_types.class_id for the account's account_type
+        $sql = "SELECT ct.class_id FROM " . TB_PREF . "chart_master cm
+            LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
+            WHERE cm.account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
+        $result = db_query($sql, null);
+        $row = db_fetch_assoc($result);
+
+        return $row && $row['class_id'] ? (string)$row['class_id'] : null;
     }
 }

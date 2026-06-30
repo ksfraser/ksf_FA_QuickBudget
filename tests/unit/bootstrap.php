@@ -31,5 +31,7 @@ if (!function_exists('db_fetch_assoc')) {
 class MockDbResult {}
 
 // Load required include files
+require_once __DIR__ . '/../../includes/BudgetEntryDTO.php';
 require_once __DIR__ . '/../../includes/InflationFactorDTO.php';
 require_once __DIR__ . '/../../includes/InflationFactorManager.php';
+require_once __DIR__ . '/../../src/Service/BudgetGeneratorService.php';

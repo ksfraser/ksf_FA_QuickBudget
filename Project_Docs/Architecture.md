@@ -55,7 +55,7 @@ ksf_FA_QuickBudget/
 ```sql
 CREATE TABLE `0_ksf_quickbudget_factors` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `factor_type` enum('global','category','gl') NOT NULL DEFAULT 'global',
+    `factor_type` enum('global','group','category','gl') NOT NULL DEFAULT 'global',
     `reference_id` varchar(64) NOT NULL DEFAULT '',
     `rate` decimal(10,4) NOT NULL DEFAULT '1.0000',
     `company` int(11) NOT NULL DEFAULT '0',
@@ -63,6 +63,12 @@ CREATE TABLE `0_ksf_quickbudget_factors` (
     UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`,`company`)
 );
 ```
+
+Factor types:
+- `global`: Default inflation rate for all accounts
+- `group`: Override for GL groups (from chart_class.group_id)
+- `category`: Override for account categories (Assets, Income, COGS, Expenses)
+- `gl`: Override for specific GL account codes
 
 ### 4-2. Budget Scenarios Table
 ```sql
@@ -94,11 +100,16 @@ CREATE TABLE `0_ksf_quickbudget_budget` (
 ### 4-4. Budget Approvals Table
 ```sql
 CREATE TABLE `0_ksf_quickbudget_approvals` (
-    `budget_id` int(11) NOT NULL,
+    `tran_date` date NOT NULL,
+    `gl_account` varchar(15) NOT NULL,
+    `dimension_id` int(11) DEFAULT '0',
+    `dimension2_id` int(11) DEFAULT '0',
     `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
     `approved_by` int(11) DEFAULT NULL,
     `approved_at` datetime DEFAULT NULL,
-    PRIMARY KEY (`budget_id`)
+    `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`tran_date`,`gl_account`,`dimension_id`,`dimension2_id`),
+    KEY `idx_status` (`status`)
 );
 ```
 
@@ -120,8 +131,9 @@ CREATE TABLE `0_ksf_quickbudget_approvals` (
 ```
 getInflationFactor(gl_account_code):
     1. Check 0_ksf_quickbudget_factors for GL-specific rate
-    2. Else check category-level rate (by GL account type)
-    3. Else return global default rate
+    2. Else check group-level rate (from chart_class.group_id)
+    3. Else check category-level rate (by GL account type)
+    4. Else return global default rate
 ```
 
 ---
@@ -131,6 +143,7 @@ getInflationFactor(gl_account_code):
 | Integration | Method |
 |-------------|--------|
 | FA GL Accounts | Query `chart_master` for GL accounts |
+| FA GL Classes | Query `chart_class` for group assignments |
 | FA Actuals | Query `gl_trans` for historical transactions |
 | FA Security | `SA_KSF_QUICKBUDGETVIEW`, `SA_KSF_QUICKBUDGETMANAGE` |
 | FA Hooks | `ksf_get_value`, `ksf_crud_event` listeners |
