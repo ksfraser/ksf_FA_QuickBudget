@@ -76,35 +76,6 @@ final class BudgetGeneratorService
     }
 
     /**
-     * Check if GL account is an income or balance sheet account.
-     *
-     * FA account_type: 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 4=Sales, 5=Purchases,
-     *                  6=Inventory, 7=COGS, 8=Expense, 9=Other Income, 10=Other Expense
-     *
-     * @param string $glAccount GL account code
-     * @return array{0: bool, 1: bool} [isIncome, isBalanceSheet]
-     * @see FR-13
-     */
-    private function getAccountType(string $glAccount): array
-    {
-        global $db;
-
-        $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
-            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
-        $result = db_query($sql, null);
-        $row = db_fetch_assoc($result);
-
-        if (!$row) {
-            return [false, false];
-        }
-
-        $type = (int)$row['account_type'];
-        // Income types: 4=Sales, 9=Other Income
-        // Balance sheet (no scenario): 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 6=Inventory
-        return [$type === 4 || $type === 9, $type <= 6];
-    }
-
-    /**
      * Get scenario multiplier from database.
      *
      * @param int $scenarioId
@@ -148,24 +119,16 @@ final class BudgetGeneratorService
                 if ($amount != 0.0) {
                     $sqlDate = sprintf('%04d-%02d-01', $entry->getYear(), $month);
 
-                    // Use FA's add_update_gl_budget_trans if available, otherwise direct DB
-                    if (function_exists('add_update_gl_budget_trans')) {
-                        add_update_gl_budget_trans(
-                            $sqlDate,
-                            $entry->getGLAccount(),
-                            0,
-                            0,
-                            $amount
-                        );
-                    } else {
-                        // Direct DB insert fallback
-                        $sql = "INSERT INTO " . TB_PREF . "budget_trans
-                            (tran_date, account, dimension_id, dimension2_id, amount)
-                            VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
-                                '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
-                                0, 0, " . (float)$amount . ")
-                            ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
-                        db_query($sql);
+                    // Direct DB insert with Y-m-d format (MySQL native)
+                    $sql = "INSERT INTO " . TB_PREF . "budget_trans
+                        (tran_date, account, dimension_id, dimension2_id, amount)
+                        VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
+                            '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
+                            0, 0, " . (float)$amount . ")
+                        ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
+                    $result = db_query($sql);
+                    if (!$result) {
+                        error_log("QuickBudget ERROR: " . db_error_msg($db) . " SQL: $sql");
                     }
                     $count++;
                 }
