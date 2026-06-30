@@ -1,7 +1,7 @@
 -- ksf_FA_QuickBudget install.sql
 -- Creates tables for inflation factors and budget scenarios
 
--- Inflation factors table for FR-01 through FR-06
+-- Inflation factors table for FR-01 through FR-07
 CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_factors` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `factor_type` enum('global','group','category','gl') NOT NULL DEFAULT 'global',
@@ -57,22 +57,4 @@ CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_approvals` (
     `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`tran_date`,`gl_account`,`dimension_id`,`dimension2_id`),
     KEY `idx_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- GL account groups for FR-03
-CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_groups` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `group_name` varchar(64) NOT NULL,
-    `company` int(11) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_group_name` (`group_name`,`company`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- GL account to group assignments
-CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_account_groups` (
-    `gl_account` varchar(15) NOT NULL,
-    `group_id` int(11) NOT NULL,
-    `company` int(11) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`gl_account`,`company`),
-    KEY `idx_group` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
