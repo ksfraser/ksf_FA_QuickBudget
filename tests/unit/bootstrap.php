@@ -27,6 +27,12 @@ if (!function_exists('db_fetch_assoc')) {
     }
 }
 
+if (!function_exists('db_error_msg')) {
+    function db_error_msg($db) {
+        return 'Mock DB error';
+    }
+}
+
 // Mock DB result class
 class MockDbResult {}
 
