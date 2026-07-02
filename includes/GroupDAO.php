@@ -7,7 +7,7 @@
  */
 declare(strict_types=1);
 
-final class GroupRepository
+final class GroupDAO
 {
     /**
      * Get all groups (class_id) with their names.
@@ -20,7 +20,7 @@ final class GroupRepository
 
         $result = db_query("SELECT DISTINCT class_id, name FROM " . TB_PREF . "chart_types
             WHERE class_id IS NOT NULL AND class_id > 0
-            ORDER BY class_id");
+            ORDER BY class_id", "Cannot read groups");
 
         $groups = [];
         while ($row = db_fetch_assoc($result)) {
@@ -41,7 +41,7 @@ final class GroupRepository
         global $db;
 
         $result = db_query("SELECT name FROM " . TB_PREF . "chart_types
-            WHERE class_id = '" . mysqli_real_escape_string($db, $classId) . "'");
+            WHERE class_id = '" . mysqli_real_escape_string($db, $classId) . "'", "Cannot read group name");
         $row = db_fetch_assoc($result);
 
         return $row ? $row['name'] : null;

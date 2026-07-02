@@ -22,6 +22,7 @@ if (file_exists($glTransInc)) {
 // BudgetEntryDTO must be loaded first as BudgetGeneratorService depends on it
 require_once('../includes/BudgetEntryDTO.php');
 require_once('../includes/InflationFactorManager.php');
+require_once('../includes/ScenarioRepository.php');
 require_once('../src/Service/BudgetGeneratorService.php');
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
@@ -76,9 +77,12 @@ function render_view(): void
 
     echo "<tr><th>" . _("Scenario") . "</th><td>";
     echo "<select name='scenario_id' id='scenario_id'>";
-    echo "<option value='0'>Baseline</option>";
-    echo "<option value='1'>Optimistic (0.9x)</option>";
-    echo "<option value='2'>Pessimistic (1.1x)</option>";
+    $scenarioSql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = 0";
+    $scenarioResult = db_query($scenarioSql);
+    while ($row = db_fetch_assoc($scenarioResult)) {
+        $desc = ($row['name'] === 'Baseline') ? '' : ' (' . sprintf("%.2fx", (float)$row['multiplier']) . ')';
+        echo "<option value='" . (int)$row['id'] . "'>" . htmlspecialchars($row['name']) . $desc . "</option>";
+    }
     echo "</select></td></tr>";
     echo "</table>";
 
@@ -221,7 +225,7 @@ function handle_compare(): void
 function handle_export(): void
 {
     // FR-25, FR-27: Export budget data to CSV with all 12 months from native FA tables
-    global $db;
+    global $db, $path_to_root;
 
     $year = (int)($_GET['year'] ?? date('Y'));
 
@@ -230,7 +234,12 @@ function handle_export(): void
         WHERE YEAR(tran_date) = " . (int)$year . "
         GROUP BY account, MONTH(tran_date)
         ORDER BY gl_account, month";
-    $result = db_query($sql, null);
+    $result = db_query($sql, "Cannot read budget for export");
+    if (!$result) {
+        $msg = urlencode("Database error reading budget");
+        header("Location: quickbudget.php?message=$msg");
+        exit;
+    }
 
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="budget_' . $year . '.csv"');

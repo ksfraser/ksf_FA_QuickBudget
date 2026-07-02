@@ -35,7 +35,11 @@ class InflationFactorManager
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
             WHERE company = " . (int)$company;
-        $result = db_query($sql, null);
+        $result = db_query($sql, "Cannot read inflation factors");
+
+        if (!$result) {
+            return;
+        }
 
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
@@ -197,7 +201,7 @@ class InflationFactorManager
 
         $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
-        $result = db_query($sql, null);
+        $result = db_query($sql, "Cannot read account category");
         $row = db_fetch_assoc($result);
 
         if (!$row) {
@@ -239,7 +243,7 @@ class InflationFactorManager
         $sql = "SELECT ct.class_id FROM " . TB_PREF . "chart_master cm
             LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
             WHERE cm.account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
-        $result = db_query($sql, null);
+        $result = db_query($sql, "Cannot read account group");
         $row = db_fetch_assoc($result);
 
         return $row && $row['class_id'] ? (string)$row['class_id'] : null;

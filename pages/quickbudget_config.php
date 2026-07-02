@@ -37,6 +37,7 @@ function render_view(): void
 
     include_once($path_to_root . "/includes/ui/items_cart.inc");
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
+    include_once(dirname(__DIR__) . '/includes/ScenarioRepository.php');
     include_once(dirname(__DIR__) . '/includes/GroupDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
 
@@ -45,6 +46,14 @@ function render_view(): void
 
     // Store in session for quick access
     $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
+
+    // Get scenario multipliers for display
+    $scenarioRepo = new ScenarioRepository();
+    $scenariosArray = $scenarioRepo->getAllForCompany(0);
+    $scenarios = [];
+    foreach ($scenariosArray as $scenario) {
+        $scenarios[$scenario->getName()] = ['id' => $scenario->getId(), 'multiplier' => $scenario->getMultiplier()];
+    }
 
     page(_("Quick Budget Configuration"), false, false, '', '');
 
@@ -57,7 +66,10 @@ function render_view(): void
     }
 
     echo "<div class='row'>";
-    
+     
+    // Scenario Multiplier Section (FR-13)
+    renderScenarioSection($scenarios, $perPage);
+
     // Global Rate Section
     renderGlobalSection($manager, $perPage);
     
@@ -91,6 +103,31 @@ function render_view(): void
     echo "</div>";
 
     end_page();
+}
+
+function renderScenarioSection(array $scenarios, int $perPage): void
+{
+    echo "<div class='col-md-12 mb-3'>";
+    echo "<div class='card'>";
+    echo "<div class='card-header'>" . _("Scenario Multipliers (FR-13)") . "</div>";
+    echo "<div class='card-body'>";
+    echo "<table class='table table-sm table-striped'>";
+    echo "<thead><tr><th>" . _("Scenario") . "</th><th>" . _("Multiplier") . "</th><th>" . _("Description") . "</th></tr></thead>";
+    echo "<tbody>";
+    foreach ($scenarios as $name => $data) {
+        echo "<tr>";
+        echo "<form method='post' action='quickbudget_config.php?action=save' style='display:flex; margin:0;'>";
+        echo "<td>" . htmlspecialchars($name) . "<input type='hidden' name='type' value='scenario'></td>";
+        echo "<td><input type='number' step='0.001' min='0' name='multiplier' value='" . htmlspecialchars((string)$data['multiplier']) . "' class='form-control form-control-sm' style='width:auto;'></td>";
+        echo "<td>" . _("Applied to inflation rate before converting to multiplier") . "<input type='hidden' name='per_page' value='$perPage'><input type='hidden' name='scenario_id' value='" . (int)$data['id'] . "'><input type='submit' class='btn btn-sm btn-primary' value='" . _("Save") . "'></td>";
+        echo "</form>";
+        echo "</tr>";
+    }
+    echo "</tbody>";
+    echo "</table>";
+    echo "</div>";
+    echo "</div>";
+    echo "</div>";
 }
 
 function renderGlobalSection(InflationFactorManager $manager, int $perPage): void
@@ -143,7 +180,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['ref']) . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editCategoryRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
+        echo "<td><button type='button' aspect='nonajax' class='btn btn-sm btn-secondary' onclick=\"editCategoryRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
@@ -229,7 +266,7 @@ function renderGroupSection(int $perPage): void
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
+        echo "<td><button type='button' aspect='nonajax' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
@@ -256,7 +293,7 @@ function renderGroupSection(int $perPage): void
     echo "<select name='reference' id='group_ref' class='form-control mb-2' onchange=\"setGroupRateFromSelect(this.value)\">";
     foreach ($allGroups as $id => $name) {
         $selected = isset($allRates[$id]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($id) . "'$selected>" . htmlspecialchars($name . ' (' . $id . ')') . "</option>";
+        echo "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name . ' (' . $id . ')') . "</option>";
     }
     echo "</select>";
     echo "<input type='number' step='0.0001' name='rate' id='group_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
@@ -315,7 +352,7 @@ function renderGLSection(int $perPage): void
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['ref'] . ' - ' . $row['name']) . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGLRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
+        echo "<td><button type='button' aspect='nonajax' class='btn btn-sm btn-secondary' onclick=\"editGLRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
@@ -342,7 +379,7 @@ function renderGLSection(int $perPage): void
     echo "<select name='reference' id='gl_ref' class='form-control mb-2' onchange=\"setGLRateFromSelect(this.value)\">";
     foreach ($allGL as $code => $name) {
         $selected = isset($allRates[$code]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($code) . "'$selected>" . htmlspecialchars($code . ' - ' . $name) . "</option>";
+        echo "<option value='" . htmlspecialchars((string)$code) . "'$selected>" . htmlspecialchars((string)$code . ' - ' . $name) . "</option>";
     }
     echo "</select>";
     echo "<input type='number' step='0.0001' name='rate' id='gl_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
@@ -398,6 +435,13 @@ function handle_save(): void
         case 'gl':
             $manager->setGLRate($reference, $rate);
             $factor = new InflationFactorDTO($type, $reference, $rate, $company);
+            break;
+        case 'scenario':
+            $scenarioId = (int)($_POST['scenario_id'] ?? 0);
+            $multiplier = (float)($_POST['multiplier'] ?? 1.0);
+            $sql = "UPDATE " . TB_PREF . "ksf_quickbudget_scenarios 
+                    SET multiplier = " . (float)$multiplier . " WHERE id = " . (int)$scenarioId;
+            db_query($sql, "Cannot update scenario multiplier");
             break;
         default:
             $factor = null;

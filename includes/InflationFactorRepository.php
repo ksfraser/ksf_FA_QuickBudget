@@ -19,7 +19,10 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE company=" . (int)$company);
+        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE company=" . (int)$company, "Cannot read inflation factors");
+        if (!$result) {
+            return [];
+        }
         $factors = [];
 
         while ($row = db_fetch_assoc($result)) {
@@ -53,7 +56,7 @@ final class InflationFactorRepository
             (int)$factor->getCompany() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
-        return db_query($sql, null) !== false;
+        return db_query($sql, "Cannot save inflation factor") !== false;
     }
 
     /**

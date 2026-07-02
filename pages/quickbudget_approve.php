@@ -74,8 +74,8 @@ function render_view(): void
             echo "<td>{$budget['gl_account']}</td>";
             echo "<td>" . number_format($budget['amount'], 2) . "</td>";
             echo "<td>";
-            echo "<button onclick='approveBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-success'>" . _("Approve") . "</button>";
-            echo "<button onclick='rejectBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-danger'>" . _("Reject") . "</button>";
+            echo "<button aspect='nonajax' onclick='approveBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-success'>" . _("Approve") . "</button>";
+            echo "<button aspect='nonajax' onclick='rejectBudget(\"{$budget['tran_date']}\",\"{$budget['gl_account']}\")' class='btn btn-danger'>" . _("Reject") . "</button>";
             echo "</td>";
             echo "</tr>";
         }

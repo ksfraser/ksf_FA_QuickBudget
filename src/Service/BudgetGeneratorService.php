@@ -51,16 +51,18 @@ final class BudgetGeneratorService
             for ($month = $startMonth; $month <= 12; $month++) {
                 $actualAmount = $actuals[$month] ?? 0.0;
                 
-                // Convert percentage to multiplier: 3% -> 1.03
-                $rateMultiplier = $inflationRate;
-                if ($inflationRate > 10 && $inflationRate <= 100) {
-                    $rateMultiplier = 1.0 + ($inflationRate / 100.0);
+                // FR-10, FR-13: Apply scenario to rate BEFORE converting to multiplier
+                // Rate is stored as percentage (e.g., 3 = 3% inflation)
+                // Scenario multiplier applies to the rate: 3% * 1.1 = 3.3%
+                $effectiveRate = $inflationRate;
+                if ($inflationRate != 0) {
+                    $effectiveRate = $inflationRate * $scenarioMultiplier;
                 }
                 
-                // Apply scenario: if rate is 0 (fixed contract), no scenario adjustment
-                $effectiveScenario = $inflationRate == 0 ? 1.0 : $scenarioMultiplier;
+                // Convert percentage to multiplier: 3.3% -> 1.033
+                $rateMultiplier = 1.0 + ($effectiveRate / 100.0);
                 
-                $budgetAmounts[$month] = $actualAmount * $rateMultiplier * $effectiveScenario;
+                $budgetAmounts[$month] = $actualAmount * $rateMultiplier;
             }
 
             $entries[] = new BudgetEntryDTO(
@@ -117,13 +119,17 @@ final class BudgetGeneratorService
                 if ($amount != 0.0) {
                     $sqlDate = sprintf('%04d-%02d-01', $entry->getYear(), $month);
 
-                    // Direct DB insert with Y-m-d format (MySQL native)
+                    // DELETE then INSERT to avoid duplicates (FA budget_trans may not have unique key)
+                    $sql = "DELETE FROM " . TB_PREF . "budget_trans
+                        WHERE tran_date = '" . mysqli_real_escape_string($db, $sqlDate) . "'
+                        AND account = '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "'";
+                    db_query($sql);
+                    
                     $sql = "INSERT INTO " . TB_PREF . "budget_trans
                         (tran_date, account, dimension_id, dimension2_id, amount)
                         VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
                             '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
-                            0, 0, " . (float)$amount . ")
-                        ON DUPLICATE KEY UPDATE amount=VALUES(amount)";
+                            0, 0, " . (float)$amount . ")";
                     $result = db_query($sql);
                     if (!$result) {
                         error_log("QuickBudget ERROR: SQL: $sql");
