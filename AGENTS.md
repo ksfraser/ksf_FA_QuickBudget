@@ -40,7 +40,7 @@ ksf_FA_QuickBudget/
 
 ## Development Workflow
 
-All development is done in the **devel tree** (`~/ksf_FA_QuickBudget`). Do **not** edit files in the UAT bind point directly.
+All development is done in the **devel tree** (`/home/ksf_quickbudget/ksf_FA_QuickBudget`). Do **not** edit files in the UAT bind point directly.
 
 ### Workflow Steps
 1. **Develop** in this repo (feature branches preferred)
@@ -51,18 +51,18 @@ All development is done in the **devel tree** (`~/ksf_FA_QuickBudget`). Do **not
 6. **Push** `master` to GitHub
 7. **Deploy** to UAT by pulling in the Infrastructure bind point:
 
-   ```
-   cd ~/ksf_Infrastructure/fa_modules/ksf_FA_QuickBudget
-   git stash -u
-   git pull origin master
-   git stash pop
-   ```
+```
+    cd /home/kevin/Documents/ksf_Infrastructure/fa_modules/ksf_FA_QuickBudget
+    git stash -u
+    git pull origin master
+    git stash pop
+    ```
 
 ### UAT Bind Point
 | Path | Purpose |
 |------|---------|
-| `~/Documents/ksf_FA_QuickBudget` | Devel tree — all development, testing, commits |
-| `~/ksf_Infrastructure/fa_modules/ksf_FA_QuickBudget` | UAT bind point — deployment target, integration testing (if mirrored) |
+| `/home/ksf_quickbudget/ksf_FA_QuickBudget` | Devel tree — all development, testing, commits |
+| `/home/kevin/Documents/ksf_Infrastructure/fa_modules/ksf_FA_QuickBudget` | UAT bind point — deployment target, integration testing |
 
 
 ## FA DB Layer — Correct API

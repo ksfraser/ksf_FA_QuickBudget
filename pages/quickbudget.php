@@ -234,10 +234,10 @@ function handle_export(): void
         WHERE YEAR(tran_date) = " . (int)$year . "
         GROUP BY account, MONTH(tran_date)
         ORDER BY gl_account, month";
-    $result = db_query($sql, "Cannot read budget for export");
+    $result = db_query($sql);
     if (!$result) {
-        $msg = urlencode("Database error reading budget");
-        header("Location: quickbudget.php?message=$msg");
+        header('Content-Type: text/plain');
+        echo "Database error";
         exit;
     }
 

@@ -16,17 +16,19 @@ final class ScenarioRepository
     {
         global $db;
 
-        $result = db_query("SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = " . (int)$company, "Cannot read scenarios");
+        $result = db_query("SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = " . (int)$company);
         $scenarios = [];
 
-        while ($row = db_fetch_assoc($result)) {
-            $scenarios[] = new ScenarioDTO(
-                $row['name'],
-                (float)$row['multiplier'],
-                '',
-                (int)$row['company'],
-                (int)$row['id']
-            );
+        if ($result) {
+            while ($row = db_fetch_assoc($result)) {
+                $scenarios[] = new ScenarioDTO(
+                    $row['name'],
+                    (float)$row['multiplier'],
+                    '',
+                    (int)$row['company'],
+                    (int)$row['id']
+                );
+            }
         }
 
         return $scenarios;

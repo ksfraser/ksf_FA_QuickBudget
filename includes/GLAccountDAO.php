@@ -20,7 +20,7 @@ final class GLAccountDAO
 
         $result = db_query("SELECT account_code, account_name FROM " . TB_PREF . "chart_master
             WHERE account_code IS NOT NULL
-            ORDER BY account_code", "Cannot read GL accounts");
+            ORDER BY account_code");
 
         $accounts = [];
         while ($row = db_fetch_assoc($result)) {
@@ -41,7 +41,7 @@ final class GLAccountDAO
         global $db;
 
         $result = db_query("SELECT account_name FROM " . TB_PREF . "chart_master
-            WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'", "Cannot read account name");
+            WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
         $row = db_fetch_assoc($result);
 
         return $row ? $row['account_name'] : null;
@@ -58,7 +58,7 @@ final class GLAccountDAO
         global $db;
 
         $result = db_query("SELECT account_type FROM " . TB_PREF . "chart_master
-            WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'", "Cannot read account type");
+            WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
         $row = db_fetch_assoc($result);
 
         return $row ? (int)$row['account_type'] : null;
@@ -76,7 +76,7 @@ final class GLAccountDAO
 
         $result = db_query("SELECT ct.class_id FROM " . TB_PREF . "chart_master cm
             LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
-            WHERE cm.account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'", "Cannot read account group");
+            WHERE cm.account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
         $row = db_fetch_assoc($result);
 
         return $row && $row['class_id'] ? (string)$row['class_id'] : null;
