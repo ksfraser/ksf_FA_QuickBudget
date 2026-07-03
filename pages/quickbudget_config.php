@@ -494,9 +494,11 @@ function handle_import(): void
 function handle_export(): void
 {
     include_once(dirname(__DIR__) . '/includes/InflationFactorRepository.php');
+    include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
     $repo = new InflationFactorRepository();
 
-    $rows = $repo->exportToCsv((int)($_SESSION['company'] ?? 0));
+    $company = (int)($_SESSION['company'] ?? 0);
+    $rows = $repo->exportToCsv($company);
 
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="inflation_factors.csv"');
