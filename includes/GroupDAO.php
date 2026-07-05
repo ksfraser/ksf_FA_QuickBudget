@@ -17,14 +17,22 @@ final class GroupDAO
     public function getAllGroups(): array
     {
         global $db;
+        
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return [];
+        }
 
-        $result = db_query("SELECT DISTINCT class_id, name FROM " . TB_PREF . "chart_types
+        $sql = "SELECT DISTINCT class_id, name FROM " . TB_PREF . "chart_types
             WHERE class_id IS NOT NULL AND class_id > 0
-            ORDER BY class_id");
+            ORDER BY class_id";
+        $result = db_query($sql);
 
         $groups = [];
-        while ($row = db_fetch_assoc($result)) {
-            $groups[$row['class_id']] = $row['name'];
+        if ($result) {
+            while ($row = db_fetch_assoc($result)) {
+                $groups[$row['class_id']] = $row['name'];
+            }
         }
 
         return $groups;
@@ -39,9 +47,17 @@ final class GroupDAO
     public function getGroupName(string $classId): ?string
     {
         global $db;
+        
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
 
         $result = db_query("SELECT name FROM " . TB_PREF . "chart_types
             WHERE class_id = '" . mysqli_real_escape_string($db, $classId) . "'");
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         return $row ? $row['name'] : null;

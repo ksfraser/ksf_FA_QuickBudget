@@ -16,7 +16,8 @@ final class ScenarioRepository
     {
         global $db;
 
-        $result = db_query("SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = " . (int)$company);
+        $sql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = " . (int)$company;
+        $result = db_query($sql);
         $scenarios = [];
 
         if ($result) {
@@ -41,7 +42,11 @@ final class ScenarioRepository
     {
         global $db;
 
-        $result = db_query("SELECT multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE id = " . (int)$scenarioId, "Cannot read scenario");
+        $sql = "SELECT multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE id = " . (int)$scenarioId;
+        $result = db_query($sql);
+        if (!$result) {
+            return 1.0;
+        }
         $row = db_fetch_assoc($result);
 
         return $row ? (float)$row['multiplier'] : 1.0;

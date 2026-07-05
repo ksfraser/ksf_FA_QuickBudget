@@ -17,14 +17,21 @@ final class GLAccountDAO
     public function getAllGLAccounts(): array
     {
         global $db;
+        
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return [];
+        }
 
         $result = db_query("SELECT account_code, account_name FROM " . TB_PREF . "chart_master
             WHERE account_code IS NOT NULL
             ORDER BY account_code");
 
         $accounts = [];
-        while ($row = db_fetch_assoc($result)) {
-            $accounts[$row['account_code']] = $row['account_name'];
+        if ($result) {
+            while ($row = db_fetch_assoc($result)) {
+                $accounts[$row['account_code']] = $row['account_name'];
+            }
         }
 
         return $accounts;
@@ -40,8 +47,16 @@ final class GLAccountDAO
     {
         global $db;
 
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
         $result = db_query("SELECT account_name FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         return $row ? $row['account_name'] : null;
@@ -57,8 +72,16 @@ final class GLAccountDAO
     {
         global $db;
 
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
         $result = db_query("SELECT account_type FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         return $row ? (int)$row['account_type'] : null;
@@ -74,9 +97,17 @@ final class GLAccountDAO
     {
         global $db;
 
+        // Defensive: check if DB is valid before querying
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
         $result = db_query("SELECT ct.class_id FROM " . TB_PREF . "chart_master cm
             LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
             WHERE cm.account_code = '" . mysqli_real_escape_string($db, $accountCode) . "'");
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         return $row && $row['class_id'] ? (string)$row['class_id'] : null;

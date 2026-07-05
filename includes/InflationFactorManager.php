@@ -202,6 +202,9 @@ class InflationFactorManager
         $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
         $result = db_query($sql);
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         if (!$row) {
@@ -244,6 +247,9 @@ class InflationFactorManager
             LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
             WHERE cm.account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
         $result = db_query($sql);
+        if (!$result) {
+            return null;
+        }
         $row = db_fetch_assoc($result);
 
         return $row && $row['class_id'] ? (string)$row['class_id'] : null;
