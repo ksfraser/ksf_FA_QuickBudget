@@ -34,6 +34,8 @@ final class GroupDAO
                 $classId = (string)$row['class_id'];
                 $groups[$classId] = $row['name'];
             }
+        } else {
+            error_log("GroupDAO::getAllGroups query failed: " . $sql);
         }
 
         return $groups;

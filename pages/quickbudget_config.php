@@ -171,7 +171,25 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<div class='card-header'>" . _("Category Rates") . "</div>";
     echo "<div class='card-body'>";
     
-    // Existing rates table
+    // Pagination for category
+    
+    // Form for new/edit (before table)
+    echo "<hr>";
+    echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
+    echo "<input type='hidden' name='type' value='category'>";
+    echo "<input type='hidden' name='per_page' value='$perPage'>";
+    echo "<input type='hidden' name='is_edit' id='category_is_edit' value='0'>";
+    echo "<select name='reference' id='category_ref' class='form-control mb-2' onchange=\"setCategoryRateFromSelect(this.value)\">";
+    foreach ($categories as $cat) {
+        $selected = isset($allRates[$cat]) ? ' selected' : '';
+        echo "<option value='$cat'$selected>$cat</option>";
+    }
+    echo "</select>";
+    echo "<input type='number' step='any' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
+    echo "<input type='submit' id='category_submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
+    echo "</form>";
+    
+    // Existing rates table (after form)
     echo "<table class='table table-sm table-striped'>";
     echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
@@ -202,22 +220,6 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
         }
         echo "</div>";
     }
-    
-    // Form for new/edit
-    echo "<hr>";
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
-    echo "<input type='hidden' name='type' value='category'>";
-    echo "<input type='hidden' name='per_page' value='$perPage'>";
-    echo "<input type='hidden' name='is_edit' id='category_is_edit' value='0'>";
-    echo "<select name='reference' id='category_ref' class='form-control mb-2' onchange=\"setCategoryRateFromSelect(this.value)\">";
-    foreach ($categories as $cat) {
-        $selected = isset($allRates[$cat]) ? ' selected' : '';
-        echo "<option value='$cat'$selected>$cat</option>";
-    }
-    echo "</select>";
-    echo "<input type='number' step='any' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' id='category_submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
-    echo "</form>";
     
     echo "<script>
     function editCategoryRate(ref, rate) {
