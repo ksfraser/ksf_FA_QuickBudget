@@ -43,7 +43,8 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
 
     $manager = new InflationFactorManager();
-    $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
+    $company = (int)($_SESSION['company'] ?? 0);
+    $manager->loadFromDB($company);
 
     // Store in session for quick access
     $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
@@ -78,10 +79,10 @@ echo "<div class='row'>";
     renderCategorySection($manager, $perPage);
 
     // Group Rate Section
-    renderGroupSection($perPage);
+    renderGroupSection($perPage, $manager->getAllRates()['group'] ?? []);
 
     // GL-Specific Rate Section
-    renderGLSection($perPage);
+    renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
     
     echo "</div>";
 
@@ -254,7 +255,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "</div>";
 }
 
-function renderGroupSection(int $perPage): void
+function renderGroupSection(int $perPage, array $groupRates = []): void
 {
     $groupDAO = new GroupDAO();
     $allGroups = $groupDAO->getAllGroups();
@@ -264,12 +265,18 @@ function renderGroupSection(int $perPage): void
         echo "<div class='card mb-3'>";
         echo "<div class='card-header'>" . _("Group Rates") . "</div>";
         echo "<div class='card-body'>";
-        echo "<p class='text-warning'>" . _("No groups found in chart_types") . "</p>";
+        echo "<p class='text-warning'>DEBUG: allGroups empty, SQL error in log";
         echo "</div></div></div>";
         return;
     }
     
-    $allRates = $_SESSION['ksf_qb_factors']['group'] ?? [];
+    // Get existing group rates (prefer passed-in rates, fallback to session)
+    $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
+    
+    // Debug: show count
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+        error_log("renderGroupSection: " . count($allRates) . " rates, " . count($allGroups) . " groups");
+    }
     
     // Paginate rates
     $rateItems = [];
@@ -366,13 +373,13 @@ function renderGroupSection(int $perPage): void
     echo "</div>";
 }
 
-function renderGLSection(int $perPage): void
+function renderGLSection(int $perPage, array $glRates = []): void
 {
     $glDAO = new GLAccountDAO();
     $allGL = $glDAO->getAllGLAccounts();
     
-    // Get existing GL rates from session
-    $allRates = $_SESSION['ksf_qb_factors']['gl'] ?? [];
+    // Get existing GL rates (prefer passed-in rates, fallback to session)
+    $allRates = $glRates ?: ($_SESSION['ksf_qb_factors']['gl'] ?? []);
     
     // Paginate rates
     $rateItems = [];
@@ -514,7 +521,10 @@ function handle_save(): void
     }
 
     if ($factor) {
-        $repo->save($factor);
+        $saved = $repo->save($factor);
+        if (!$saved) {
+            error_log("handle_save: save failed for type={$type}, ref={$reference}");
+        }
         $manager->loadFromDB($company);
         $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
     }

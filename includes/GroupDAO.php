@@ -35,7 +35,8 @@ final class GroupDAO
                 $groups[$classId] = $row['name'];
             }
         } else {
-            error_log("GroupDAO::getAllGroups query failed: " . $sql);
+            $error = $db ? (method_exists($db, 'error') ? $db->error : 'no error property') : 'no db connection';
+            error_log("GroupDAO::getAllGroups query failed: " . ($sql ?? 'no sql') . " - DB error: " . $error);
         }
 
         return $groups;
