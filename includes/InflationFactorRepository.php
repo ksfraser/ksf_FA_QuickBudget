@@ -47,18 +47,19 @@ final class InflationFactorRepository
     {
         global $db;
 
+        $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
             (factor_type, reference_id, rate, company)
             VALUES (" .
             "'" . $factor->getType() . "', " .
-            "'" . mysqli_real_escape_string($db, $factor->getReferenceId()) . "', " .
+            "'" . $escapedRef . "', " .
             (float)$factor->getRate() . ", " .
             (int)$factor->getCompany() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
         $result = db_query($sql);
         if ($result === false) {
-            error_log("InflationFactorRepository::save failed: " . $sql);
+            error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
             return false;
         }
         return true;

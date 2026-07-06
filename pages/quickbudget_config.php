@@ -504,6 +504,8 @@ function handle_save(): void
 
     if ($factor) {
         $repo->save($factor);
+        $manager->loadFromDB($company);
+        $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
     }
 
     $msg = urlencode($isEdit ? _("Rate updated successfully") : _("Rate saved successfully"));
