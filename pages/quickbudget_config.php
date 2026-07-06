@@ -259,7 +259,16 @@ function renderGroupSection(int $perPage): void
     $groupDAO = new GroupDAO();
     $allGroups = $groupDAO->getAllGroups();
     
-    // Get existing group rates from session
+    if (empty($allGroups)) {
+        echo "<div class='col-md-6'>";
+        echo "<div class='card mb-3'>";
+        echo "<div class='card-header'>" . _("Group Rates") . "</div>";
+        echo "<div class='card-body'>";
+        echo "<p class='text-warning'>" . _("No groups found in chart_types") . "</p>";
+        echo "</div></div></div>";
+        return;
+    }
+    
     $allRates = $_SESSION['ksf_qb_factors']['group'] ?? [];
     
     // Paginate rates
