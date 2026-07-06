@@ -530,6 +530,7 @@ function handle_save(): void
     }
 
     $msg = urlencode($isEdit ? _("Rate updated successfully") : _("Rate saved successfully"));
+    session_write_close();
     header("Location: quickbudget_config.php?per_page=$perPage&message=$msg");
     exit;
 }
