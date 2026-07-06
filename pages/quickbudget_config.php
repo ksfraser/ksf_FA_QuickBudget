@@ -142,7 +142,7 @@ function renderGlobalSection(InflationFactorManager $manager, int $perPage): voi
     echo "<form method='post' action='quickbudget_config.php?action=save'>";
     echo "<input type='hidden' name='type' value='global'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
-    echo "<input type='number' step='0.0001' name='rate' id='rate' value='" . htmlspecialchars((string)$currentRate) . "' class='form-control'>";
+    echo "<input type='number' step='any' name='rate' id='rate' value='" . htmlspecialchars((string)$currentRate) . "' class='form-control'>";
     echo "<input type='submit' class='btn btn-primary mt-2' value='" . _("Save Global Rate") . "'>";
     echo "</form>";
     echo "</div>";
@@ -208,26 +208,42 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='category'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
+    echo "<input type='hidden' name='is_edit' id='category_is_edit' value='0'>";
     echo "<select name='reference' id='category_ref' class='form-control mb-2' onchange=\"setCategoryRateFromSelect(this.value)\">";
     foreach ($categories as $cat) {
         $selected = isset($allRates[$cat]) ? ' selected' : '';
         echo "<option value='$cat'$selected>$cat</option>";
     }
     echo "</select>";
-    echo "<input type='number' step='0.0001' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
+    echo "<input type='number' step='any' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
+    echo "<input type='submit' id='category_submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
     echo "</form>";
     
     echo "<script>
     function editCategoryRate(ref, rate) {
         document.getElementById('category_ref').value = ref;
         document.getElementById('category_rate').value = rate;
+        document.getElementById('category_is_edit').value = '1';
+        document.getElementById('category_submit').value = '" . _("Update Rate") . "';
         document.getElementById('category_rate').focus();
+    }
+    function resetCategoryForm() {
+        document.getElementById('category_rate').value = '';
+        document.getElementById('category_is_edit').value = '0';
+        document.getElementById('category_submit').value = '" . _("Save Category Rate") . "';
     }
     function setCategoryRateFromSelect(value) {
         var rateInput = document.getElementById('category_rate');
         var existingRates = " . json_encode($allRates) . ";
-        rateInput.value = existingRates[value] || '';
+        if (existingRates[value]) {
+            rateInput.value = existingRates[value];
+            document.getElementById('category_is_edit').value = '1';
+            document.getElementById('category_submit').value = '" . _("Update Rate") . "';
+        } else {
+            rateInput.value = '';
+            document.getElementById('category_is_edit').value = '0';
+            document.getElementById('category_submit').value = '" . _("Save Category Rate") . "';
+        }
     }
     </script>";
     
@@ -297,6 +313,7 @@ function renderGroupSection(int $perPage): void
     echo "<form method='post' action='quickbudget_config.php?action=save' id='group-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='group'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
+    echo "<input type='hidden' name='is_edit' id='group_is_edit' value='0'>";
     echo "<select name='reference' id='group_ref' class='form-control mb-2' onchange=\"setGroupRateFromSelect(this.value)\">";
     foreach ($allGroups as $id => $name) {
         if (empty($id)) {
@@ -306,20 +323,30 @@ function renderGroupSection(int $perPage): void
         echo "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name . ' (' . $id . ')') . "</option>";
     }
     echo "</select>";
-    echo "<input type='number' step='0.0001' name='rate' id='group_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' class='btn btn-primary' value='" . _("Save Group Rate") . "'>";
+    echo "<input type='number' step='any' name='rate' id='group_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
+    echo "<input type='submit' id='group_submit' class='btn btn-primary' value='" . _("Save Group Rate") . "'>";
     echo "</form>";
     
     echo "<script>
     function editGroupRate(ref, rate) {
         document.getElementById('group_ref').value = ref;
         document.getElementById('group_rate').value = rate;
+        document.getElementById('group_is_edit').value = '1';
+        document.getElementById('group_submit').value = '" . _("Update Rate") . "';
         document.getElementById('group_rate').focus();
     }
     function setGroupRateFromSelect(value) {
         var rateInput = document.getElementById('group_rate');
         var existingRates = " . json_encode($allRates) . ";
-        rateInput.value = existingRates[value] || '';
+        if (existingRates[value]) {
+            rateInput.value = existingRates[value];
+            document.getElementById('group_is_edit').value = '1';
+            document.getElementById('group_submit').value = '" . _("Update Rate") . "';
+        } else {
+            rateInput.value = '';
+            document.getElementById('group_is_edit').value = '0';
+            document.getElementById('group_submit').value = '" . _("Save Group Rate") . "';
+        }
     }
     </script>";
     
@@ -389,6 +416,7 @@ function renderGLSection(int $perPage): void
     echo "<form method='post' action='quickbudget_config.php?action=save' id='gl-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='gl'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
+    echo "<input type='hidden' name='is_edit' id='gl_is_edit' value='0'>";
     echo "<select name='reference' id='gl_ref' class='form-control mb-2' onchange=\"setGLRateFromSelect(this.value)\">";
     foreach ($allGL as $code => $name) {
         if (empty($code)) {
@@ -398,20 +426,30 @@ function renderGLSection(int $perPage): void
         echo "<option value='" . htmlspecialchars((string)$code) . "'$selected>" . htmlspecialchars((string)$code . ' - ' . $name) . "</option>";
     }
     echo "</select>";
-    echo "<input type='number' step='0.0001' name='rate' id='gl_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' class='btn btn-primary' value='" . _("Save GL Rate") . "'>";
+    echo "<input type='number' step='any' name='rate' id='gl_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
+    echo "<input type='submit' id='gl_submit' class='btn btn-primary' value='" . _("Save GL Rate") . "'>";
     echo "</form>";
     
     echo "<script>
     function editGLRate(ref, rate) {
         document.getElementById('gl_ref').value = ref;
         document.getElementById('gl_rate').value = rate;
+        document.getElementById('gl_is_edit').value = '1';
+        document.getElementById('gl_submit').value = '" . _("Update Rate") . "';
         document.getElementById('gl_rate').focus();
     }
     function setGLRateFromSelect(value) {
         var rateInput = document.getElementById('gl_rate');
         var existingRates = " . json_encode($allRates) . ";
-        rateInput.value = existingRates[value] || '';
+        if (existingRates[value]) {
+            rateInput.value = existingRates[value];
+            document.getElementById('gl_is_edit').value = '1';
+            document.getElementById('gl_submit').value = '" . _("Update Rate") . "';
+        } else {
+            rateInput.value = '';
+            document.getElementById('gl_is_edit').value = '0';
+            document.getElementById('gl_submit').value = '" . _("Save GL Rate") . "';
+        }
     }
     </script>";
     
@@ -463,11 +501,12 @@ function handle_save(): void
             $factor = null;
     }
 
+    $isEdit = (int)($_POST['is_edit'] ?? 0);
     if ($factor) {
         $repo->save($factor);
     }
 
-    $msg = urlencode(_("Rate saved successfully"));
+    $msg = urlencode($isEdit ? _("Rate updated successfully") : _("Rate saved successfully"));
     header("Location: quickbudget_config.php?per_page=$perPage&message=$msg");
     exit;
 }
