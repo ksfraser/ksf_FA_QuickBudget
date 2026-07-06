@@ -56,7 +56,12 @@ final class InflationFactorRepository
             (int)$factor->getCompany() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
-        return db_query($sql) !== false;
+        $result = db_query($sql);
+        if ($result === false) {
+            error_log("InflationFactorRepository::save failed: " . $sql);
+            return false;
+        }
+        return true;
     }
 
     /**

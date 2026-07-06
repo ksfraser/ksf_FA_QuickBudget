@@ -30,7 +30,8 @@ final class GLAccountDAO
         $accounts = [];
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $accounts[$row['account_code']] = $row['account_name'];
+                $code = (string)$row['account_code'];
+                $accounts[$code] = $row['account_name'];
             }
         }
 

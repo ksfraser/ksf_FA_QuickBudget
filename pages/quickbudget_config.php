@@ -469,6 +469,7 @@ function handle_save(): void
     $reference = $_POST['reference'] ?? '';
     $perPage = (int)($_POST['per_page'] ?? 10);
     $company = (int)($_SESSION['company'] ?? 0);
+    $isEdit = (int)($_POST['is_edit'] ?? 0);
 
     $manager = new InflationFactorManager();
     $repo = new InflationFactorRepository();
@@ -484,11 +485,11 @@ function handle_save(): void
             break;
         case 'group':
             $manager->setGroupRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate, $company);
             break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate, $company);
             break;
         case 'scenario':
             $scenarioId = (int)($_POST['scenario_id'] ?? 0);
@@ -501,7 +502,6 @@ function handle_save(): void
             $factor = null;
     }
 
-    $isEdit = (int)($_POST['is_edit'] ?? 0);
     if ($factor) {
         $repo->save($factor);
     }

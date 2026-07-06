@@ -31,7 +31,8 @@ final class GroupDAO
         $groups = [];
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $groups[$row['class_id']] = $row['name'];
+                $classId = (string)$row['class_id'];
+                $groups[$classId] = $row['name'];
             }
         }
 

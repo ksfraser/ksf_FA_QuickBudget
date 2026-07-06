@@ -44,7 +44,7 @@ class InflationFactorManager
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
             $type = $row['factor_type'];
-            $ref = $row['reference_id'];
+            $ref = (string)$row['reference_id'];
             // Skip rows with invalid/empty type or reference
             if (empty($type) || empty($ref)) {
                 continue;
