@@ -74,12 +74,12 @@ echo "<div class='row'>";
     // Global Rate Section
     renderGlobalSection($manager, $perPage);
     
-    // Category Rate Section
+// Category Rate Section
     renderCategorySection($manager, $perPage);
-    
+
     // Group Rate Section
     renderGroupSection($perPage);
-    
+
     // GL-Specific Rate Section
     renderGLSection($perPage);
     
@@ -177,6 +177,9 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<tbody>";
     $odd = true;
     foreach ($displayItems as $row) {
+        if (empty($row['ref'])) {
+            continue;
+        }
         $odd = !$odd;
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['ref']) . "</td>";
@@ -202,7 +205,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     
     // Form for new/edit
     echo "<hr>";
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form'>";
+    echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='category'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
     echo "<select name='reference' id='category_ref' class='form-control mb-2' onchange=\"setCategoryRateFromSelect(this.value)\">";
@@ -263,6 +266,9 @@ function renderGroupSection(int $perPage): void
     echo "<tbody>";
     $odd = true;
     foreach ($displayItems as $row) {
+        if (empty($row['ref'])) {
+            continue;
+        }
         $odd = !$odd;
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
@@ -288,13 +294,16 @@ function renderGroupSection(int $perPage): void
     
     // Form for new/edit
     echo "<hr>";
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='group-form'>";
+    echo "<form method='post' action='quickbudget_config.php?action=save' id='group-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='group'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
     echo "<select name='reference' id='group_ref' class='form-control mb-2' onchange=\"setGroupRateFromSelect(this.value)\">";
     foreach ($allGroups as $id => $name) {
+        if (empty($id)) {
+            continue;
+        }
         $selected = isset($allRates[$id]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($id) . "'$selected>" . htmlspecialchars($name . ' (' . $id . ')') . "</option>";
+        echo "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name . ' (' . $id . ')') . "</option>";
     }
     echo "</select>";
     echo "<input type='number' step='0.0001' name='rate' id='group_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
@@ -349,6 +358,9 @@ function renderGLSection(int $perPage): void
     echo "<tbody>";
     $odd = true;
     foreach ($displayItems as $row) {
+        if (empty($row['ref'])) {
+            continue;
+        }
         $odd = !$odd;
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['ref'] . ' - ' . $row['name']) . "</td>";
@@ -374,13 +386,16 @@ function renderGLSection(int $perPage): void
     
     // Form for new/edit
     echo "<hr>";
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='gl-form'>";
+    echo "<form method='post' action='quickbudget_config.php?action=save' id='gl-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='gl'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
     echo "<select name='reference' id='gl_ref' class='form-control mb-2' onchange=\"setGLRateFromSelect(this.value)\">";
     foreach ($allGL as $code => $name) {
+        if (empty($code)) {
+            continue;
+        }
         $selected = isset($allRates[$code]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($code) . "'$selected>" . htmlspecialchars($code . ' - ' . $name) . "</option>";
+        echo "<option value='" . htmlspecialchars((string)$code) . "'$selected>" . htmlspecialchars((string)$code . ' - ' . $name) . "</option>";
     }
     echo "</select>";
     echo "<input type='number' step='0.0001' name='rate' id='gl_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";

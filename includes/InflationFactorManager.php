@@ -34,7 +34,7 @@ class InflationFactorManager
         global $db;
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
-            WHERE company = " . (int)$company;
+            WHERE company = " . (int)$company . " AND factor_type IS NOT NULL AND reference_id IS NOT NULL AND reference_id != ''";
         $result = db_query($sql);
 
         if (!$result) {
@@ -43,18 +43,24 @@ class InflationFactorManager
 
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
-            switch ($row['factor_type']) {
+            $type = $row['factor_type'];
+            $ref = $row['reference_id'];
+            // Skip rows with invalid/empty type or reference
+            if (empty($type) || empty($ref)) {
+                continue;
+            }
+            switch ($type) {
                 case 'global':
                     $this->globalRate = $rate;
                     break;
                 case 'group':
-                    $this->groupRates[$row['reference_id']] = $rate;
+                    $this->groupRates[$ref] = $rate;
                     break;
                 case 'category':
-                    $this->categoryRates[$row['reference_id']] = $rate;
+                    $this->categoryRates[$ref] = $rate;
                     break;
                 case 'gl':
-                    $this->glRates[$row['reference_id']] = $rate;
+                    $this->glRates[$ref] = $rate;
                     break;
             }
         }
