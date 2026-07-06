@@ -96,11 +96,11 @@ echo "<div class='row'>";
     // Import/Export Section
     echo "<div class='card mt-3'>";
     echo "<h4>" . _("Import/Export") . "</h4>";
-    echo "<form method='post' action='quickbudget_config.php?action=import' enctype='multipart/form-data'>";
+    echo "<form method='post' action='quickbudget_config.php?action=import' enctype='multipart/form-data' class='mb-2'>";
     echo "<input type='file' name='csv_file' accept='.csv' class='form-control'>";
     echo "<input type='submit' class='btn btn-secondary mt-2' value='" . _("Import from CSV") . "'>";
-    echo " <a href='quickbudget_config.php?action=export' class='btn btn-secondary mt-2'>" . _("Export to CSV") . "</a>";
     echo "</form>";
+    echo "<a href='quickbudget_config.php?action=export' class='btn btn-secondary'>" . _("Export to CSV") . "</a>";
     echo "</div>";
 
     end_page();
