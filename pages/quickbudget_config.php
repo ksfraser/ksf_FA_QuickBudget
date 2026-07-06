@@ -273,9 +273,10 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     // Get existing group rates (prefer passed-in rates, fallback to session)
     $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
     
-    // Debug: show count
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
-        error_log("renderGroupSection: " . count($allRates) . " rates, " . count($allGroups) . " groups");
+    // Debug: show what we have
+    $outputDebug = "DEBUG: " . count($allRates) . " rates, " . count($allGroups) . " groups";
+    foreach ($allRates as $ref => $rate) {
+        $outputDebug .= " | ref=$ref rate=$rate";
     }
     
     // Paginate rates
@@ -289,10 +290,11 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     $offset = ($pageNum - 1) * $perPage;
     $displayItems = array_slice($rateItems, $offset, $perPage);
     
-    echo "<div class='col-md-6'>";
+echo "<div class='col-md-6'>";
     echo "<div class='card mb-3'>";
     echo "<div class='card-header'>" . _("Group Rates") . "</div>";
     echo "<div class='card-body'>";
+    echo "<p class='text-muted small'>$outputDebug</p>";
     
     // Existing rates table
     echo "<table class='table table-sm table-striped border'>";
