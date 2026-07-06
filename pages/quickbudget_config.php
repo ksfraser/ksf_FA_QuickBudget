@@ -190,7 +190,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "</form>";
     
     // Existing rates table (after form)
-    echo "<table class='table table-sm table-striped'>";
+    echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
     $odd = true;
@@ -279,7 +279,7 @@ function renderGroupSection(int $perPage): void
     echo "<div class='card-body'>";
     
     // Existing rates table
-    echo "<table class='table table-sm table-striped'>";
+    echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("Group") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
     $odd = true;
@@ -382,7 +382,7 @@ function renderGLSection(int $perPage): void
     echo "<div class='card-body'>";
     
     // Existing rates table
-    echo "<table class='table table-sm table-striped'>";
+    echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("GL Account") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
     $odd = true;
