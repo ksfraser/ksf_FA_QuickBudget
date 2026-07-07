@@ -175,7 +175,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     // Pagination for category
     
     // Form for new/edit (before table)
-    echo "<hr>";
+    
     echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='category'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
@@ -305,7 +305,7 @@ function renderGroupSection(int $perPage, array $groupRates = [], int $company =
 echo "<div class='col-md-6'>";
     echo "<div class='card mb-3'>";
     echo "<div class='card-header'>" . _("Group Rates") . "</div>";
-    echo "<div class='card-body'>";
+    echo "<div class='card-body' style='border: 1px solid #ddd; margin-top: 10px;'>";
     echo "<p class='text-muted small'>$outputDebug</p>";
     
     // Pagination for groups
@@ -341,7 +341,7 @@ echo "<div class='col-md-6'>";
     echo "</table>";
     
     // Form for new/edit (after table)
-    echo "<hr>";
+    
     echo "<form method='post' action='quickbudget_config.php?action=save' id='group-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='group'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
@@ -444,7 +444,7 @@ function renderGLSection(int $perPage, array $glRates = []): void
     }
     
     // Form for new/edit
-    echo "<hr>";
+    
     echo "<form method='post' action='quickbudget_config.php?action=save' id='gl-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='gl'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
