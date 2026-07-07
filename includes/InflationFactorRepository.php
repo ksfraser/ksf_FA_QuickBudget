@@ -57,6 +57,8 @@ final class InflationFactorRepository
             (int)$factor->getCompany() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
+        error_log("save: SQL={$sql}");
+        
         $result = db_query($sql);
         if ($result === false) {
             error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));

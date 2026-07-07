@@ -274,7 +274,7 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
     
     // Debug: show what we have
-    $outputDebug = "DEBUG: company={$company}, type={$type} rates=" . count($allRates) . ", groups=" . count($allGroups);
+    $outputDebug = "DEBUG: company={$company}, rates=" . count($allRates) . ", groups=" . count($allGroups);
     foreach ($allRates as $ref => $rate) {
         $outputDebug .= " | ref=$ref rate=$rate";
     }
