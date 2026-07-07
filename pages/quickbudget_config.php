@@ -292,6 +292,9 @@ function renderGroupSection(int $perPage, array $groupRates = [], int $company =
     // DB verification - check if group rate exists in DB
     $dbRates = [];
     $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group' AND company=" . (int)$company;
+    $logFile = dirname(__DIR__) . '/logs/debug.log';
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " verifySQL: " . $verifySQL . "\n", FILE_APPEND);
+
     $verifyResult = db_query($verifySQL);
     if ($verifyResult) {
         while ($row = db_fetch_assoc($verifyResult)) {
