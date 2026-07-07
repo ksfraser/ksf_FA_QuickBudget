@@ -274,7 +274,7 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
     
     // Debug: show what we have
-    $outputDebug = "DEBUG: " . count($allRates) . " rates, " . count($allGroups) . " groups";
+    $outputDebug = "DEBUG: company={$company}, type={$type} rates=" . count($allRates) . ", groups=" . count($allGroups);
     foreach ($allRates as $ref => $rate) {
         $outputDebug .= " | ref=$ref rate=$rate";
     }
@@ -524,7 +524,7 @@ function handle_save(): void
 
     if ($factor) {
         $saved = $repo->save($factor);
-        error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, company={$company}, saved=" . ($saved ? 'true' : 'false'));
+        error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, company={$company}, sessionCompany=" . ($_SESSION['company'] ?? 'not set') . ", saved=" . ($saved ? 'true' : 'false'));
         if (!$saved) {
             error_log("handle_save: save failed for type={$type}, ref={$reference}");
         }

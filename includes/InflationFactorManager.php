@@ -35,6 +35,7 @@ class InflationFactorManager
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
             WHERE company = " . (int)$company . " AND factor_type IS NOT NULL AND reference_id IS NOT NULL AND reference_id != ''";
+        error_log("loadFromDB: company={$company}, sql={$sql}");
         $result = db_query($sql);
 
         if (!$result) {
