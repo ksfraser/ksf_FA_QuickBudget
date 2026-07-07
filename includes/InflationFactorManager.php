@@ -57,8 +57,11 @@ class InflationFactorManager
             $rate = (float)$row['rate'];
             $type = $row['factor_type'];
             $ref = (string)$row['reference_id'];
-            // Skip rows with invalid/empty type or reference
-            if (empty($type) || empty($ref)) {
+            if (empty($type)) {
+                continue;
+            }
+            // For global rates, reference_id can be empty
+            if ($type !== 'global' && empty($ref)) {
                 continue;
             }
             error_log("loadFromDB: type={$type}, ref={$ref}, rate={$rate}");
