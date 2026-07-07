@@ -77,7 +77,7 @@ function render_view(): void
 
     echo "<tr><th>" . _("Scenario") . "</th><td>";
     echo "<select name='scenario_id' id='scenario_id'>";
-    $scenarioSql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = 0";
+    $scenarioSql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE 1=1";
     $scenarioResult = db_query($scenarioSql);
     while ($row = db_fetch_assoc($scenarioResult)) {
         $desc = ($row['name'] === 'Baseline') ? '' : ' (' . sprintf("%.2fx", (float)$row['multiplier']) . ')';
@@ -142,7 +142,7 @@ function handle_create(): void
 
         // FR-09: Generate budget
         $manager = new InflationFactorManager();
-        $manager->loadFromDB((int)($_SESSION['company'] ?? 0));
+        $manager->loadFromDB();
 
         $service = new BudgetGeneratorService($manager);
         error_log("QuickBudget DEBUG: Calling generate(targetYear=$targetYear, startMonth=$startMonth, scenarioId=$scenarioId)");
@@ -150,7 +150,7 @@ function handle_create(): void
         error_log("QuickBudget DEBUG: Generated " . count($entries) . " entries");
 
         // FR-14: Save to FA native budget tables
-        $saved = $service->saveToFABudget($entries, (int)($_SESSION['company'] ?? 0), $path_to_root);
+        $saved = $service->saveToFABudget($entries, $path_to_root);
 
         $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
         

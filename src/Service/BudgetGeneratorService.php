@@ -102,13 +102,12 @@ final class BudgetGeneratorService
      * Save budget entries to FA native budget_trans table.
      *
      * @param array<BudgetEntryDTO> $entries
-     * @param int $company Company ID
      * @param string $pathToRoot Path to FA root for including functions
      * @param bool $submitForApproval Whether to create approval records
      * @return int Number of entries saved
      * @see FR-14, FR-21
      */
-    public function saveToFABudget(array $entries, int $company = 0, string $pathToRoot = '', bool $submitForApproval = false): int
+    public function saveToFABudget(array $entries, string $pathToRoot = '', bool $submitForApproval = false): int
     {
         global $db;
 
