@@ -331,7 +331,7 @@ echo "<div class='col-md-6'>";
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\")>" . _("Edit") . "</button></td>";
+        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
