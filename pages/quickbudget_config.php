@@ -113,7 +113,7 @@ function renderScenarioSection(array $scenarios, int $perPage): void
     echo "<div class='card'>";
     echo "<div class='card-header'>" . _("Scenario Multipliers (FR-13)") . "</div>";
     echo "<div class='card-body'>";
-    echo "<table class='table table-sm table-striped'>";
+    echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("Scenario") . "</th><th>" . _("Multiplier") . "</th><th>" . _("Description") . "</th></tr></thead>";
     echo "<tbody>";
     foreach ($scenarios as $name => $data) {
@@ -137,7 +137,7 @@ function renderGlobalSection(InflationFactorManager $manager, int $perPage): voi
     $currentRate = $manager->getDefaultRate();
     
     echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3'>";
+    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Global Rate") . "</div>";
     echo "<div class='card-body'>";
     echo "<form method='post' action='quickbudget_config.php?action=save'>";
@@ -168,7 +168,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     $displayItems = array_slice($rateItems, $offset, $perPage);
     
     echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3'>";
+    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Category Rates") . "</div>";
     echo "<div class='card-body'>";
     
@@ -262,7 +262,7 @@ function renderGroupSection(int $perPage, array $groupRates = [], int $company =
     
     if (empty($allGroups)) {
         echo "<div class='col-md-6'>";
-        echo "<div class='card mb-3'>";
+        echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
         echo "<div class='card-header'>" . _("Group Rates") . "</div>";
         echo "<div class='card-body'>";
         echo "<p class='text-warning'>DEBUG: allGroups empty, SQL error in log";
@@ -303,7 +303,7 @@ function renderGroupSection(int $perPage, array $groupRates = [], int $company =
     $displayItems = array_slice($rateItems, $offset, $perPage);
     
 echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3'>";
+    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Group Rates") . "</div>";
     echo "<div class='card-body' style='border: 1px solid #ddd; margin-top: 10px;'>";
     echo "<p class='text-muted small'>$outputDebug</p>";
@@ -407,7 +407,7 @@ function renderGLSection(int $perPage, array $glRates = []): void
     $displayItems = array_slice($rateItems, $offset, $perPage);
     
     echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3'>";
+    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("GL-Specific Rates") . "</div>";
     echo "<div class='card-body'>";
     
