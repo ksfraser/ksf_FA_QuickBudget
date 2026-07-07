@@ -272,12 +272,24 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     
     // Get existing group rates (prefer passed-in rates, fallback to session)
     $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
+    $company = (int)($_SESSION['company'] ?? 0);
     
     // Debug: show what we have
     $outputDebug = "DEBUG: company={$company}, rates=" . count($allRates) . ", groups=" . count($allGroups);
     foreach ($allRates as $ref => $rate) {
         $outputDebug .= " | ref=$ref rate=$rate";
     }
+    
+    // DB verification - check if group rate exists in DB
+    $dbRates = [];
+    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group' AND company=" . (int)$company;
+    $verifyResult = db_query($verifySQL);
+    if ($verifyResult) {
+        while ($row = db_fetch_assoc($verifyResult)) {
+            $dbRates[(string)$row['reference_id']] = (float)$row['rate'];
+        }
+    }
+    $outputDebug .= " | DB has " . count($dbRates) . " group rates";
     
     // Paginate rates
     $rateItems = [];
