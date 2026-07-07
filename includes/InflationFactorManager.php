@@ -37,6 +37,14 @@ class InflationFactorManager
             WHERE company = " . (int)$company . " AND factor_type IS NOT NULL AND reference_id IS NOT NULL AND reference_id != ''";
         error_log("loadFromDB: company={$company}, sql={$sql}");
         $result = db_query($sql);
+        
+        if (!$result) {
+            error_log("loadFromDB: query failed, result=false");
+            return;
+        }
+        
+        $rows = db_num_rows($result);
+        error_log("loadFromDB: found {$rows} rows");
 
         if (!$result) {
             return;
