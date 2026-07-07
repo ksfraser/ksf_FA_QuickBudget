@@ -7,10 +7,8 @@ CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_factors` (
     `factor_type` enum('global','group','category','gl') NOT NULL DEFAULT 'global',
     `reference_id` varchar(64) NOT NULL DEFAULT '',
     `rate` decimal(10,4) NOT NULL DEFAULT '1.0000',
-    `company` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`,`company`),
-    KEY `idx_company_type` (`company`,`factor_type`)
+    UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Budget scenarios for FR-13
@@ -19,17 +17,15 @@ CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_scenarios` (
     `name` varchar(64) NOT NULL,
     `multiplier` decimal(10,4) NOT NULL DEFAULT '1.0000',
     `description` text,
-    `company` int(11) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`id`),
-    KEY `idx_company` (`company`)
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Seed default scenarios for FR-13
-INSERT IGNORE INTO `0_ksf_quickbudget_scenarios` (`name`, `multiplier`, `description`, `company`)
+INSERT IGNORE INTO `0_ksf_quickbudget_scenarios` (`name`, `multiplier`, `description`)
 VALUES 
-    ('Baseline', 1.0000, 'Standard budget projection', 0),
-    ('Optimistic', 0.9000, '10% below calculated amounts', 0),
-    ('Pessimistic', 1.1000, '10% above calculated amounts', 0);
+    ('Baseline', 1.0000, 'Standard budget projection'),
+    ('Optimistic', 0.9000, '10% below calculated amounts'),
+    ('Pessimistic', 1.1000, '10% above calculated amounts');
 
 -- Budget entries for FR-14 (kept for scenarios and approval tracking)
 CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_budget` (
@@ -39,9 +35,8 @@ CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_budget` (
     `month` int(11) NOT NULL,
     `amount` decimal(16,2) NOT NULL DEFAULT '0.00',
     `scenario` varchar(32) NOT NULL DEFAULT 'baseline',
-    `company` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_budget` (`gl_account`,`year`,`month`,`scenario`,`company`),
+    UNIQUE KEY `unique_budget` (`gl_account`,`year`,`month`,`scenario`),
     KEY `idx_account_year` (`gl_account`,`year`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -21,19 +21,14 @@ final class InflationFactorDTO
     /** @var float Rate multiplier (e.g., 1.0350 for 3.5%) */
     private $rate;
 
-    /** @var int Company ID */
-    private $company;
-
     public function __construct(
         string $type,
         string $referenceId,
-        float $rate,
-        int $company = 0
+        float $rate
     ) {
         $this->type = $type;
         $this->referenceId = $referenceId;
         $this->rate = $rate;
-        $this->company = $company;
     }
 
     public function getType(): string
@@ -49,10 +44,5 @@ final class InflationFactorDTO
     public function getRate(): float
     {
         return $this->rate;
-    }
-
-    public function getCompany(): int
-    {
-        return $this->company;
     }
 }

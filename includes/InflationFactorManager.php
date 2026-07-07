@@ -24,20 +24,19 @@ class InflationFactorManager
     private $groupRates = [];
 
     /**
-     * Load rates from database for a company.
+     * Load rates from database.
      *
-     * @param int $company Company ID
      * @return void
      */
-    public function loadFromDB(int $company = 0): void
+    public function loadFromDB(): void
     {
         global $db;
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
-            WHERE company = " . (int)$company . " AND factor_type IS NOT NULL ";
+            WHERE factor_type IS NOT NULL ";
         
         $logFile = dirname(__DIR__) . '/logs/debug.log';
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: company=" . $company . ", sql=" . $sql . "\n", FILE_APPEND);
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: sql=" . $sql . "\n", FILE_APPEND);
         
         $result = db_query($sql);
         
@@ -49,19 +48,11 @@ class InflationFactorManager
         $rows = db_num_rows($result);
         error_log("loadFromDB: found {$rows} rows");
 
-        if (!$result) {
-            return;
-        }
-
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
             $type = $row['factor_type'];
             $ref = (string)$row['reference_id'];
             if (empty($type)) {
-                continue;
-            }
-            // For global rates, reference_id can be empty
-            if ($type !== 'global' && empty($ref)) {
                 continue;
             }
             error_log("loadFromDB: type={$type}, ref={$ref}, rate={$rate}");

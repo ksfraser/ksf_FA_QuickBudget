@@ -10,16 +10,15 @@ declare(strict_types=1);
 final class InflationFactorRepository
 {
     /**
-     * Get all inflation factors for a company.
+     * Get all inflation factors.
      *
-     * @param int $company Company ID
      * @return array<InflationFactorDTO>
      */
-    public function getAllForCompany(int $company): array
+    public function getAll(): array
     {
         global $db;
 
-        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE company=" . (int)$company . " AND factor_type IS NOT NULL ");
+        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
         if (!$result) {
             return [];
         }
@@ -29,8 +28,7 @@ final class InflationFactorRepository
             $factors[] = new InflationFactorDTO(
                 $row['factor_type'],
                 $row['reference_id'],
-                (float)$row['rate'],
-                (int)$row['company']
+                (float)$row['rate']
             );
         }
 
@@ -49,12 +47,11 @@ final class InflationFactorRepository
 
         $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
-            (factor_type, reference_id, rate, company)
+            (factor_type, reference_id, rate)
             VALUES (" .
             "'" . $factor->getType() . "', " .
             "'" . $escapedRef . "', " .
-            (float)$factor->getRate() . ", " .
-            (int)$factor->getCompany() .
+            (float)$factor->getRate() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
         error_log("save: SQL={$sql}");
@@ -74,18 +71,16 @@ final class InflationFactorRepository
      * Import factors from CSV data.
      *
      * @param array $csvRows Array of ['type' => ..., 'reference' => ..., 'rate' => ...]
-     * @param int $company Company ID
      * @return int Number of factors imported
      */
-    public function importFromCsv(array $csvRows, int $company): int
+    public function importFromCsv(array $csvRows): int
     {
         $count = 0;
         foreach ($csvRows as $row) {
             $factor = new InflationFactorDTO(
                 $row['type'],
                 $row['reference'],
-                (float)$row['rate'],
-                $company
+                (float)$row['rate']
             );
             if ($this->save($factor)) {
                 $count++;
@@ -97,12 +92,11 @@ final class InflationFactorRepository
     /**
      * Export all factors as CSV-formatted array.
      *
-     * @param int $company Company ID
      * @return array Array of ['type', 'reference', 'rate'] rows
      */
-    public function exportToCsv(int $company): array
+    public function exportToCsv(): array
     {
-        $factors = $this->getAllForCompany($company);
+        $factors = $this->getAll();
         $rows = [];
 
         foreach ($factors as $factor) {

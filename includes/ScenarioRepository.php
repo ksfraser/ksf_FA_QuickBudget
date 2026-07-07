@@ -10,13 +10,13 @@ declare(strict_types=1);
 final class ScenarioRepository
 {
     /**
-     * Get all scenarios for a company.
+     * Get all scenarios.
      */
-    public function getAllForCompany(int $company = 0): array
+    public function getAll(): array
     {
         global $db;
 
-        $sql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE company = " . (int)$company;
+        $sql = "SELECT id, name, multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios";
         $result = db_query($sql);
         $scenarios = [];
 
@@ -25,8 +25,6 @@ final class ScenarioRepository
                 $scenarios[] = new ScenarioDTO(
                     $row['name'],
                     (float)$row['multiplier'],
-                    '',
-                    (int)$row['company'],
                     (int)$row['id']
                 );
             }

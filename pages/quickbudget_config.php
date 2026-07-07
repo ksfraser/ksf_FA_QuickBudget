@@ -42,16 +42,15 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/GroupDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
 
-    $company = (int)($_SESSION['company'] ?? 0);
     $manager = new InflationFactorManager();
-    $manager->loadFromDB($company);
+    $manager->loadFromDB();
 
     // Store in session for quick access
     $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
 
     // Get scenario multipliers for display
     $scenarioRepo = new ScenarioRepository();
-    $scenariosArray = $scenarioRepo->getAllForCompany(0);
+    $scenariosArray = $scenarioRepo->getAll();
     $scenarios = [];
     foreach ($scenariosArray as $scenario) {
         $scenarios[$scenario->getName()] = ['id' => $scenario->getId(), 'multiplier' => $scenario->getMultiplier()];
@@ -79,7 +78,7 @@ echo "<div class='row'>";
     renderCategorySection($manager, $perPage);
 
     // Group Rate Section
-    renderGroupSection($perPage, $manager->getAllRates()['group'] ?? [], $company);
+    renderGroupSection($perPage, $manager->getAllRates()['group'] ?? []);
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
@@ -260,7 +259,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "</div>";
 }
 
-function renderGroupSection(int $perPage, array $groupRates = [], int $company = 0): void
+function renderGroupSection(int $perPage, array $groupRates = []): void
 {
     $groupDAO = new GroupDAO();
     $allGroups = $groupDAO->getAllGroups();
@@ -277,17 +276,16 @@ function renderGroupSection(int $perPage, array $groupRates = [], int $company =
     
     // Get existing group rates (prefer passed-in rates, fallback to session)
     $allRates = $groupRates ?: ($_SESSION['ksf_qb_factors']['group'] ?? []);
-    $company = (int)($_SESSION['company'] ?? 0);
     
     // Debug: show what we have
-    $outputDebug = "DEBUG: company={$company}, rates=" . count($allRates) . ", groups=" . count($allGroups);
+    $outputDebug = "DEBUG: rates=" . count($allRates) . ", groups=" . count($allGroups);
     foreach ($allRates as $ref => $rate) {
         $outputDebug .= " | ref=$ref rate=$rate";
     }
     
     // DB verification - check if group rate exists in DB
     $dbRates = [];
-    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group' AND company=" . (int)$company;
+    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group'  ";
     $logFile = dirname(__DIR__) . '/logs/debug.log';
     file_put_contents($logFile, date('Y-m-d H:i:s') . " verifySQL: " . $verifySQL . "\n", FILE_APPEND);
 
@@ -508,7 +506,6 @@ function handle_save(): void
     $rate = (float)($_POST['rate'] ?? 1.0);
     $reference = $_POST['reference'] ?? '';
     $perPage = (int)($_POST['per_page'] ?? 10);
-    $company = (int)($_SESSION['company'] ?? 0);
     $isEdit = (int)($_POST['is_edit'] ?? 0);
 
     // Log POST data
@@ -521,19 +518,19 @@ function handle_save(): void
     switch ($type) {
         case 'global':
             $manager->setGlobalRate($rate);
-            $factor = new InflationFactorDTO($type, '', $rate, $company);
+            $factor = new InflationFactorDTO($type, '', $rate);
             break;
         case 'category':
             $manager->setCategoryRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, $reference, $rate, $company);
+            $factor = new InflationFactorDTO($type, $reference, $rate);
             break;
         case 'group':
             $manager->setGroupRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, (string)$reference, $rate, $company);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate);
             break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, (string)$reference, $rate, $company);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate);
             break;
         case 'scenario':
             $scenarioId = (int)($_POST['scenario_id'] ?? 0);
@@ -548,11 +545,11 @@ function handle_save(): void
 
     if ($factor) {
         $saved = $repo->save($factor);
-        error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, company={$company}, sessionCompany=" . ($_SESSION['company'] ?? 'not set') . ", saved=" . ($saved ? 'true' : 'false'));
+        error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, sessionCompany=" . ($_SESSION['company'] ?? 'not set') . ", saved=" . ($saved ? 'true' : 'false'));
         if (!$saved) {
             error_log("handle_save: save failed for type={$type}, ref={$reference}");
         }
-        $manager->loadFromDB($company);
+        $manager->loadFromDB();
         $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
     }
 
@@ -589,7 +586,7 @@ function handle_import(): void
     fclose($handle);
 
     $repo = new InflationFactorRepository();
-    $count = $repo->importFromCsv($csvRows, (int)($_SESSION['company'] ?? 0));
+    $count = $repo->importFromCsv($csvRows);
 
     $msg = urlencode("Imported $count factors");
     header("Location: quickbudget_config.php?message=$msg");
@@ -602,8 +599,7 @@ function handle_export(): void
     include_once(dirname(__DIR__) . '/includes/InflationFactorDTO.php');
     $repo = new InflationFactorRepository();
 
-    $company = (int)($_SESSION['company'] ?? 0);
-    $rows = $repo->exportToCsv($company);
+    $rows = $repo->exportToCsv();
 
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="inflation_factors.csv"');
