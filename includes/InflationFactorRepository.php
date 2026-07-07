@@ -59,6 +59,9 @@ final class InflationFactorRepository
 
         error_log("save: SQL={$sql}");
         
+        $logFile = dirname(__DIR__) . '/logs/debug.log';
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " save: SQL={$sql}\n", FILE_APPEND);
+        
         $result = db_query($sql, null);
         if ($result === false) {
             error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));

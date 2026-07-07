@@ -95,6 +95,13 @@ echo "<div class='row'>";
     echo "</div>";
 
     // Import/Export Section
+    renderImportExport();
+
+    end_page();
+}
+
+function renderImportExport(): void
+{
     echo "<div class='card mt-3'>";
     echo "<h4>" . _("Import/Export") . "</h4>";
     echo "<form method='post' action='quickbudget_config.php?action=import' enctype='multipart/form-data' class='mb-2'>";
@@ -103,8 +110,6 @@ echo "<div class='row'>";
     echo "</form>";
     echo "<a href='quickbudget_config.php?action=export' class='btn btn-secondary'>" . _("Export to CSV") . "</a>";
     echo "</div>";
-
-    end_page();
 }
 
 function renderScenarioSection(array $scenarios, int $perPage): void
@@ -113,7 +118,7 @@ function renderScenarioSection(array $scenarios, int $perPage): void
     echo "<div class='card'>";
     echo "<div class='card-header'>" . _("Scenario Multipliers (FR-13)") . "</div>";
     echo "<div class='card-body'>";
-    echo "<table class='table table-sm table-striped border'>";
+    echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Scenario") . "</th><th>" . _("Multiplier") . "</th><th>" . _("Description") . "</th></tr></thead>";
     echo "<tbody>";
     foreach ($scenarios as $name => $data) {
@@ -191,7 +196,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "</form>";
     
     // Existing rates table (after form)
-    echo "<table class='table table-sm table-striped border'>";
+    echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
     $odd = true;
@@ -319,7 +324,7 @@ echo "<div class='col-md-6'>";
     }
     
     // Existing rates table (before form)
-    echo "<table class='table table-sm table-striped border'>";
+    echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Group") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
     $odd = true;
