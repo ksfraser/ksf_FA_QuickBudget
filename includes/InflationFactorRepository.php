@@ -59,7 +59,7 @@ final class InflationFactorRepository
 
         error_log("save: SQL={$sql}");
         
-        $result = db_query($sql);
+        $result = db_query($sql, null);
         if ($result === false) {
             error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
             return false;
