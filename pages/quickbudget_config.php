@@ -308,7 +308,17 @@ echo "<div class='col-md-6'>";
     echo "<div class='card-body'>";
     echo "<p class='text-muted small'>$outputDebug</p>";
     
-    // Existing rates table
+    // Pagination for groups
+    if ($totalPages > 1) {
+        echo "<div class='pagination'>";
+        for ($i = 1; $i <= $totalPages; $i++) {
+            $active = $i === $pageNum ? ' font-weight-bold' : '';
+            echo "<a href='quickbudget_config.php?per_page=$perPage&group_page=$i' class='mx-1$active'>$i</a>";
+        }
+        echo "</div>";
+    }
+    
+    // Existing rates table (before form)
     echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("Group") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
@@ -321,7 +331,7 @@ echo "<div class='col-md-6'>";
         echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
         echo "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
+        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGroupRate('" . $row['ref'] . "', " . $row['rate'] . ")\")>" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
@@ -330,17 +340,7 @@ echo "<div class='col-md-6'>";
     echo "</tbody>";
     echo "</table>";
     
-    // Pagination for groups
-    if ($totalPages > 1) {
-        echo "<div class='pagination'>";
-        for ($i = 1; $i <= $totalPages; $i++) {
-            $active = $i === $pageNum ? ' font-weight-bold' : '';
-            echo "<a href='quickbudget_config.php?per_page=$perPage&group_page=$i' class='mx-1$active'>$i</a>";
-        }
-        echo "</div>";
-    }
-    
-    // Form for new/edit
+    // Form for new/edit (after table)
     echo "<hr>";
     echo "<form method='post' action='quickbudget_config.php?action=save' id='group-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='group'>";
