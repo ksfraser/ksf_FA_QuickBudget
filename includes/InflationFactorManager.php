@@ -49,6 +49,7 @@ class InflationFactorManager
             if (empty($type) || empty($ref)) {
                 continue;
             }
+            error_log("loadFromDB: type={$type}, ref={$ref}, rate={$rate}");
             switch ($type) {
                 case 'global':
                     $this->globalRate = $rate;

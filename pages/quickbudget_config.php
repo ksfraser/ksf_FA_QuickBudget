@@ -524,6 +524,7 @@ function handle_save(): void
 
     if ($factor) {
         $saved = $repo->save($factor);
+        error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, company={$company}, saved=" . ($saved ? 'true' : 'false'));
         if (!$saved) {
             error_log("handle_save: save failed for type={$type}, ref={$reference}");
         }
