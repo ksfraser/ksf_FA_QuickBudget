@@ -42,12 +42,8 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/GroupDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
 
-    // Log POST data
-    $logFile = dirname(__DIR__) . "/logs/debug.log";
-    file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: company=" . $company . ", type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
-    
-    $manager = new InflationFactorManager();
     $company = (int)($_SESSION['company'] ?? 0);
+    $manager = new InflationFactorManager();
     $manager->loadFromDB($company);
 
     // Store in session for quick access
