@@ -79,7 +79,7 @@ echo "<div class='row'>";
     renderCategorySection($manager, $perPage);
 
     // Group Rate Section
-    renderGroupSection($perPage, $manager->getAllRates()['group'] ?? []);
+    renderGroupSection($perPage, $manager->getAllRates()['group'] ?? [], $company);
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
@@ -255,7 +255,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "</div>";
 }
 
-function renderGroupSection(int $perPage, array $groupRates = []): void
+function renderGroupSection(int $perPage, array $groupRates = [], int $company = 0): void
 {
     $groupDAO = new GroupDAO();
     $allGroups = $groupDAO->getAllGroups();
