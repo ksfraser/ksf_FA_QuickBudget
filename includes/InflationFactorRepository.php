@@ -19,7 +19,7 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE company=" . (int)$company . " AND factor_type IS NOT NULL AND reference_id IS NOT NULL AND reference_id != ''");
+        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE company=" . (int)$company . " AND factor_type IS NOT NULL ");
         if (!$result) {
             return [];
         }

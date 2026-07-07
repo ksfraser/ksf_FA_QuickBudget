@@ -525,7 +525,7 @@ function handle_save(): void
     switch ($type) {
         case 'global':
             $manager->setGlobalRate($rate);
-            $factor = new InflationFactorDTO($type, '', $rate, $company);
+            $factor = new InflationFactorDTO($type, 'global', $rate, $company);
             break;
         case 'category':
             $manager->setCategoryRate($reference, $rate);
