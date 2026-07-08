@@ -33,10 +33,10 @@ class InflationFactorManager
         global $db;
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
-            WHERE factor_type IS NOT NULL";
+            WHERE factor_type IS NOT NULL ";
         
         $logFile = dirname(__DIR__) . '/logs/debug.log';
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: sql={$sql}\n", FILE_APPEND);
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: sql=" . $sql . "\n", FILE_APPEND);
         
         $result = db_query($sql);
         

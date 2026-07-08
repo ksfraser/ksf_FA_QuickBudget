@@ -18,9 +18,8 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $result = db_query("SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
+        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
         if (!$result) {
-            error_log("getAll query failed");
             return [];
         }
         $factors = [];
@@ -38,7 +37,6 @@ final class InflationFactorRepository
 
     /**
      * Save an inflation factor.
-     * Compatible with old schema (with company) - uses company=0.
      *
      * @param InflationFactorDTO $factor
      * @return bool Success
@@ -49,24 +47,24 @@ final class InflationFactorRepository
 
         $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
-            (factor_type, reference_id, rate, company)
+            (factor_type, reference_id, rate)
             VALUES (" .
             "'" . $factor->getType() . "', " .
             "'" . $escapedRef . "', " .
-            (float)$factor->getRate() . ", 0" .
+            (float)$factor->getRate() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
-        $logFile = dirname(__DIR__) . "/logs/debug.log";
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " save SQL: " . $sql . "\n", FILE_APPEND);
-
-        $result = db_query($sql, null);
-        if ($result !== false) {
-            file_put_contents($logFile, date('Y-m-d H:i:s') . " save succeeded: " . $factor->getType() . "=" . $factor->getReferenceId() . "\n", FILE_APPEND);
-            return true;
-        }
+        error_log("save: SQL={$sql}");
         
-        error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
-        return false;
+        $logFile = dirname(__DIR__) . '/logs/debug.log';
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " save: SQL={$sql}\n", FILE_APPEND);
+        
+        $result = db_query($sql, null);
+        if ($result === false) {
+            error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
+            return false;
+        }
+        return true;
     }
 
     /**

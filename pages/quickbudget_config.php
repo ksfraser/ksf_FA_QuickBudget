@@ -285,12 +285,11 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     
     // DB verification - check if group rate exists in DB
     $dbRates = [];
-     $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group'";;
+    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group'  ";
     $logFile = dirname(__DIR__) . '/logs/debug.log';
     file_put_contents($logFile, date('Y-m-d H:i:s') . " verifySQL: " . $verifySQL . "\n", FILE_APPEND);
 
     $verifyResult = db_query($verifySQL);
-    if ($verifyResult === false) { error_log("verifySQL failed: " . $verifySQL . " DB error: " . ($db ? $db->error : 'no db')); return; }
     if ($verifyResult) {
         while ($row = db_fetch_assoc($verifyResult)) {
             $dbRates[(string)$row['reference_id']] = (float)$row['rate'];
@@ -302,7 +301,6 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     $rateItems = [];
     foreach ($allRates as $ref => $rate) {
         $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $allGroups[$ref] ?? $ref];
-        if (!isset($allGroups[$ref])) {$outputDebug .= " | WARNING: group $ref not found in allGroups";}
     }
     $totalItems = count($rateItems);
     $totalPages = max(1, ceil($totalItems / $perPage));
@@ -512,7 +510,7 @@ function handle_save(): void
 
     // Log POST data
     $logFile = dirname(__DIR__) . "/logs/debug.log";
-      file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: company=" . $company . ", type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
     
     $manager = new InflationFactorManager();
     $repo = new InflationFactorRepository();
