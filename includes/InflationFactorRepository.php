@@ -18,9 +18,9 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
+        $result = db_query("SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
         if (!$result) {
-        error_log("getAll query failed");
+            error_log("getAll query failed");
             return [];
         }
         $factors = [];
@@ -38,6 +38,7 @@ final class InflationFactorRepository
 
     /**
      * Save an inflation factor.
+     * Compatible with both old schema (with company) and new schema (without company).
      *
      * @param InflationFactorDTO $factor
      * @return bool Success
@@ -48,24 +49,20 @@ final class InflationFactorRepository
 
         $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
-            (factor_type, reference_id, rate)
+            (factor_type, reference_id, rate, company)
             VALUES (" .
             "'" . $factor->getType() . "', " .
             "'" . $escapedRef . "', " .
-            (float)$factor->getRate() .
+            (float)$factor->getRate() . ", 0" .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
-        error_log("save: SQL={$sql}");
-        
-        $logFile = dirname(__DIR__) . '/logs/debug.log';
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " save: SQL={$sql}\n", FILE_APPEND);
-        
         $result = db_query($sql, null);
-        if ($result === false) {
-            error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
-            return false;
+        if ($result !== false) {
+            return true;
         }
-        return true;
+        
+        error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
+        return false;
     }
 
     /**

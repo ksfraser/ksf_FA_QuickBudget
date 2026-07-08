@@ -302,6 +302,7 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     $rateItems = [];
     foreach ($allRates as $ref => $rate) {
         $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $allGroups[$ref] ?? $ref];
+        if (!isset($allGroups[$ref])) {$outputDebug .= " | WARNING: group $ref not found in allGroups";}
     }
     $totalItems = count($rateItems);
     $totalPages = max(1, ceil($totalItems / $perPage));
