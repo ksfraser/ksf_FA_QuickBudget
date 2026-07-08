@@ -57,6 +57,9 @@ final class InflationFactorRepository
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
         $result = db_query($sql, null);
+         // Log success
+         $logFile = dirname(__DIR__) . "/logs/debug.log";
+         file_put_contents($logFile, date('Y-m-d H:i:s') . " save succeeded: " . $factor->getType() . "=" . $factor->getReferenceId() . "\n", FILE_APPEND);
         if ($result !== false) {
             return true;
         }
