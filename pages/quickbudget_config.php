@@ -285,7 +285,7 @@ function renderGroupSection(int $perPage, array $groupRates = []): void
     
     // DB verification - check if group rate exists in DB
     $dbRates = [];
-    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group'  ";
+     $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='group'";
     $logFile = dirname(__DIR__) . '/logs/debug.log';
     file_put_contents($logFile, date('Y-m-d H:i:s') . " verifySQL: " . $verifySQL . "\n", FILE_APPEND);
 

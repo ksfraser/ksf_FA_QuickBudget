@@ -20,6 +20,7 @@ final class InflationFactorRepository
 
         $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
         if (!$result) {
+        error_log("getAll query failed");
             return [];
         }
         $factors = [];
