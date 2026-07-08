@@ -512,7 +512,7 @@ function handle_save(): void
 
     // Log POST data
     $logFile = dirname(__DIR__) . "/logs/debug.log";
-    file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: company=" . $company . ", type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
+      file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
     
     $manager = new InflationFactorManager();
     $repo = new InflationFactorRepository();
