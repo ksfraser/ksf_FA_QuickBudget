@@ -53,6 +53,9 @@ function render_view(): void
     $scenariosArray = $scenarioRepo->getAll();
     $scenarios = [];
     foreach ($scenariosArray as $scenario) {
+         // Log SQL
+         $logFile = dirname(__DIR__) . "/logs/debug.log";
+         file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save saved, reloading...\n", FILE_APPEND);
         $scenarios[$scenario->getName()] = ['id' => $scenario->getId(), 'multiplier' => $scenario->getMultiplier()];
     }
 

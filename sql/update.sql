@@ -5,15 +5,9 @@
 ALTER TABLE `0_ksf_quickbudget_factors`
     MODIFY COLUMN `factor_type` ENUM('global','group','category','gl') NOT NULL DEFAULT 'global';
 
--- Drop company column (note: may already be dropped in fresh installs)
--- Uncomment if needed: ALTER TABLE `0_ksf_quickbudget_factors` DROP COLUMN `company`;
-
--- Drop index on company if exists
-ALTER TABLE `0_ksf_quickbudget_factors` DROP INDEX `idx_company_type`;
-
--- Fix unique key to not include company
+-- Drop company column and index (compatible with both old and new schema)
+ALTER TABLE `0_ksf_quickbudget_factors` DROP COLUMN `company`, DROP INDEX `idx_company_type`;
 ALTER TABLE `0_ksf_quickbudget_factors` DROP INDEX `unique_factor`;
 ALTER TABLE `0_ksf_quickbudget_factors` ADD UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`);
 
--- Drop company index from scenarios (column may already be dropped)
-ALTER TABLE `0_ksf_quickbudget_scenarios` DROP INDEX `idx_company`;
+ALTER TABLE `0_ksf_quickbudget_scenarios` DROP COLUMN `company`, DROP INDEX `idx_company`;
