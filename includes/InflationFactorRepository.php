@@ -18,7 +18,7 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $result = db_query("SELECT * FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
+        $result = db_query("SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
         if (!$result) {
             return [];
         }
@@ -37,6 +37,7 @@ final class InflationFactorRepository
 
     /**
      * Save an inflation factor.
+     * Uses company=0 for backward compatibility with old schema.
      *
      * @param InflationFactorDTO $factor
      * @return bool Success
@@ -47,11 +48,11 @@ final class InflationFactorRepository
 
         $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
-            (factor_type, reference_id, rate)
+            (factor_type, reference_id, rate, company)
             VALUES (" .
             "'" . $factor->getType() . "', " .
             "'" . $escapedRef . "', " .
-            (float)$factor->getRate() .
+            (float)$factor->getRate() . ", 0" .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
         error_log("save: SQL={$sql}");
