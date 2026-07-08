@@ -53,9 +53,6 @@ function render_view(): void
     $scenariosArray = $scenarioRepo->getAll();
     $scenarios = [];
     foreach ($scenariosArray as $scenario) {
-         // Log SQL
-         $logFile = dirname(__DIR__) . "/logs/debug.log";
-         file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save saved, reloading...\n", FILE_APPEND);
         $scenarios[$scenario->getName()] = ['id' => $scenario->getId(), 'multiplier' => $scenario->getMultiplier()];
     }
 
@@ -514,8 +511,8 @@ function handle_save(): void
     $isEdit = (int)($_POST['is_edit'] ?? 0);
 
     // Log POST data
-      $logFile = dirname(__DIR__) . "/logs/debug.log";
-     file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
+    $logFile = dirname(__DIR__) . "/logs/debug.log";
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " handle_save: company=" . $company . ", type=" . $type . ", ref=" . $reference . ", rate=" . $rate . "\n", FILE_APPEND);
     
     $manager = new InflationFactorManager();
     $repo = new InflationFactorRepository();

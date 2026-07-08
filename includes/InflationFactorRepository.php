@@ -60,6 +60,11 @@ final class InflationFactorRepository
         if ($result !== false) {
             $logFile = dirname(__DIR__) . "/logs/debug.log";
             file_put_contents($logFile, date('Y-m-d H:i:s') . " save succeeded: " . $factor->getType() . "=" . $factor->getReferenceId() . "\n", FILE_APPEND);
+         // Check for DB error even on success
+         if ($db && $db->error) {
+             $logFile = dirname(__DIR__) . "/logs/debug.log";
+             file_put_contents($logFile, date('Y-m-d H:i:s') . " DB warning after save: " . $db->error . "\n", FILE_APPEND);
+         }
             return true;
         }
         
