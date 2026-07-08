@@ -38,7 +38,7 @@ final class InflationFactorRepository
 
     /**
      * Save an inflation factor.
-     * Compatible with both old schema (with company) and new schema (without company).
+     * Compatible with old schema (with company) - uses company=0.
      *
      * @param InflationFactorDTO $factor
      * @return bool Success
@@ -56,15 +56,12 @@ final class InflationFactorRepository
             (float)$factor->getRate() . ", 0" .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
+        $logFile = dirname(__DIR__) . "/logs/debug.log";
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " save SQL: " . $sql . "\n", FILE_APPEND);
+
         $result = db_query($sql, null);
         if ($result !== false) {
-            $logFile = dirname(__DIR__) . "/logs/debug.log";
             file_put_contents($logFile, date('Y-m-d H:i:s') . " save succeeded: " . $factor->getType() . "=" . $factor->getReferenceId() . "\n", FILE_APPEND);
-         // Check for DB error even on success
-         if ($db && $db->error) {
-             $logFile = dirname(__DIR__) . "/logs/debug.log";
-             file_put_contents($logFile, date('Y-m-d H:i:s') . " DB warning after save: " . $db->error . "\n", FILE_APPEND);
-         }
             return true;
         }
         
