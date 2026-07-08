@@ -1,0 +1,2 @@
+2026-07-08 04:59:23 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM 0_ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
