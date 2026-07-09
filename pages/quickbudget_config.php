@@ -79,17 +79,16 @@ echo "<div class='row'>";
     echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
     echo "<div class='card-body'>";
-    echo "<button type='button' class='btn btn-secondary' data-toggle='modal' data-target='#rateCacheModal'>" . _("Show Rate Cache") . "</button>";
-    echo "</div></div></div>";
-     
-    // Modal for rate cache display
-    echo "<div class='modal fade' id='rateCacheModal' tabindex='-1'>";
-    echo "<div class='modal-dialog modal-lg'>";
-    echo "<div class='modal-content'>";
-    echo "<div class='modal-header'><h5 class='modal-title'>" . _("Type Rate Cache") . "</h5>";
-    echo "<button type='button' class='close' data-dismiss='modal'>&times;</button></div>";
-    echo "<div class='modal-body'><pre>" . htmlspecialchars(json_encode($manager->getAllRates()['type'] ?? [])) . "</pre></div>";
-    echo "<div class='modal-footer'><button type='button' class='btn btn-primary' data-dismiss='modal'>" . _("Close") . "</button></div>";
+    echo "<table class='table table-sm table-bordered' style='font-size: 0.85em; max-height: 200px; overflow-y: auto; display: block;'>";
+    echo "<thead><tr><th>" . _("Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
+    echo "<tbody>";
+    foreach ($manager->getAllRates()['type'] ?? [] as $name => $rate) {
+        echo "<tr><td>" . htmlspecialchars($name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
+    }
+    if (empty(($manager->getAllRates()['type'] ?? []))) {
+        echo "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
+    }
+    echo "</tbody></table>";
     echo "</div></div></div>";
 
     
