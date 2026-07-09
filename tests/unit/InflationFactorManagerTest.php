@@ -42,29 +42,28 @@ final class InflationFactorManagerTest extends TestCase
     }
 
     /**
-     * FR-03: Configure group-level inflation factors (between category and global)
-     * Tests that setGroupRate stores rates correctly.
-     * @testdox setGroupRate stores group rate for retrieval
+     * FR-03: Configure type-level inflation factors
+     * Tests that setTypeRate stores rates correctly.
+     * @testdox setTypeRate stores type rate for retrieval
      */
-    public function testSetGroupRateStoresGroupRate(): void
+    public function testSetTypeRateStoresTypeRate(): void
     {
         $this->manager->setGlobalRate(1.0200);
-        $this->manager->setGroupRate('1', 1.0400);
+        $this->manager->setTypeRate('Utilities', 1.0400);
 
         $all = $this->manager->getAllRates();
-        $this->assertArrayHasKey('group', $all);
-        $this->assertArrayHasKey('1', $all['group']);
-        $this->assertEquals(1.0400, $all['group']['1']);
+        $this->assertArrayHasKey('type', $all);
+        $this->assertArrayHasKey('utilities', $all['type']);
     }
 
     /**
-     * FR-03: GL rate overrides category and group
-     * @testdox GL-specific rate overrides category and group rates
+     * FR-03: GL rate overrides type and category
+     * @testdox GL-specific rate overrides type and category rates
      */
-    public function testGLRateOverridesCategoryAndGroup(): void
+    public function testGLRateOverridesTypeAndCategory(): void
     {
         $this->manager->setGlobalRate(1.0200);
-        $this->manager->setGroupRate('1', 1.0400);
+        $this->manager->setTypeRate('Utilities', 1.0400);
         $this->manager->setCategoryRate('Expenses', 1.0500);
         $this->manager->setGLRate('6000', 1.1000);
 

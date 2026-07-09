@@ -2,23 +2,43 @@
 /**
  * InflationFactorRepository
  *
- * Repository for inflation factor persistence.
+ * Master repository for inflation factor persistence.
  * Supports FR-04 and FR-05.
  */
 declare(strict_types=1);
 
+/**
+ * Safe escape wrapper for DB strings.
+ */
+function safe_escape($db, string $str): string
+{
+    if ($db instanceof mysqli) {
+        return mysqli_real_escape_string($db, $str);
+    }
+    return addslashes($str);
+}
+
+require_once __DIR__ . '/InflationFactorDTO.php';
+
 final class InflationFactorRepository
 {
     /**
-     * Get all inflation factors.
+     * Get all inflation factors, optionally filtered by type.
      *
+     * @param string|null $factorType One of FactorTypes constants, or null for all
      * @return array<InflationFactorDTO>
      */
-    public function getAll(): array
+    public function getAll(?string $factorType = null): array
     {
         global $db;
 
-        $result = db_query("SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL ");
+        $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors";
+        if ($factorType !== null) {
+            $sql .= " WHERE factor_type = '" . safe_escape($db, $factorType) . "'";
+        }
+        $sql .= " ORDER BY factor_type, reference_id";
+
+        $result = db_query($sql);
         if (!$result) {
             return [];
         }
@@ -37,7 +57,6 @@ final class InflationFactorRepository
 
     /**
      * Save an inflation factor.
-     * Uses company=0 for backward compatibility with old schema.
      *
      * @param InflationFactorDTO $factor
      * @return bool Success
@@ -46,23 +65,23 @@ final class InflationFactorRepository
     {
         global $db;
 
-        $escapedRef = mysqli_real_escape_string($db, $factor->getReferenceId());
+        $escapedRef = safe_escape($db, $factor->getReferenceId());
         $sql = "INSERT INTO " . TB_PREF . "ksf_quickbudget_factors
-            (factor_type, reference_id, rate, company)
+            (factor_type, reference_id, rate)
             VALUES (" .
             "'" . $factor->getType() . "', " .
             "'" . $escapedRef . "', " .
-            (float)$factor->getRate() . ", 0" .
+            (float)$factor->getRate() .
             ") ON DUPLICATE KEY UPDATE rate=" . (float)$factor->getRate();
 
-        error_log("save: SQL={$sql}");
-        
         $logFile = dirname(__DIR__) . '/logs/debug.log';
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " save: SQL={$sql}\n", FILE_APPEND);
-        
-        $result = db_query($sql, null);
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " InflationFactorRepository::save SQL={$sql}\n", FILE_APPEND);
+
+        $result = db_query($sql);
         if ($result === false) {
-            error_log("InflationFactorRepository::save failed SQL: " . $sql . " - DB error: " . ($db && $db->error ? $db->error : 'unknown'));
+            $dbError = $db && method_exists($db, 'error') ? $db->error : 'unknown';
+            error_log("InflationFactorRepository::save failed: $sql - $dbError");
+            file_put_contents($logFile, date('Y-m-d H:i:s') . " save FAILED: {$dbError}\n", FILE_APPEND);
             return false;
         }
         return true;

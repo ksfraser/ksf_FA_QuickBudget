@@ -7,6 +7,18 @@
  */
 declare(strict_types=1);
 
+/**
+ * Safe escape wrapper for DB strings.
+ * Handles mysqli, mock objects, and null.
+ */
+function safe_escape($db, string $str): string
+{
+    if ($db instanceof mysqli) {
+        return mysqli_real_escape_string($db, $str);
+    }
+    return addslashes($str);
+}
+
 final class BudgetGeneratorService
 {
     /** @var InflationFactorManager */
@@ -51,15 +63,11 @@ final class BudgetGeneratorService
             for ($month = $startMonth; $month <= 12; $month++) {
                 $actualAmount = $actuals[$month] ?? 0.0;
                 
-                // FR-10, FR-13: Apply scenario to rate BEFORE converting to multiplier
-                // Rate is stored as percentage (e.g., 3 = 3% inflation)
-                // Scenario multiplier applies to the rate: 3% * 1.1 = 3.3%
-                $effectiveRate = $inflationRate;
-                if ($inflationRate != 0) {
-                    $effectiveRate = $inflationRate * $scenarioMultiplier;
-                }
+                // Rate is stored as percentage (e.g., 3.5 = 3.5% inflation)
+                // Scenario multiplier applies: 3.5% * 1.1 = 3.85%
+                $effectiveRate = $inflationRate * $scenarioMultiplier;
                 
-                // Convert percentage to multiplier: 3.3% -> 1.033
+                // Convert percentage to multiplier: 3.85% -> 1.0385
                 $rateMultiplier = 1.0 + ($effectiveRate / 100.0);
                 
                 $budgetAmounts[$month] = $actualAmount * $rateMultiplier;
@@ -120,14 +128,14 @@ final class BudgetGeneratorService
 
                     // DELETE then INSERT to avoid duplicates (FA budget_trans may not have unique key)
                     $sql = "DELETE FROM " . TB_PREF . "budget_trans
-                        WHERE tran_date = '" . mysqli_real_escape_string($db, $sqlDate) . "'
-                        AND account = '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "'";
+                        WHERE tran_date = '" . safe_escape($db, $sqlDate) . "'
+                        AND account = '" . safe_escape($db, $entry->getGLAccount()) . "'";
                     db_query($sql);
                     
                     $sql = "INSERT INTO " . TB_PREF . "budget_trans
                         (tran_date, account, dimension_id, dimension2_id, amount)
-                        VALUES ('" . mysqli_real_escape_string($db, $sqlDate) . "',
-                            '" . mysqli_real_escape_string($db, $entry->getGLAccount()) . "',
+                        VALUES ('" . safe_escape($db, $sqlDate) . "',
+                            '" . safe_escape($db, $entry->getGLAccount()) . "',
                             0, 0, " . (float)$amount . ")";
                     $result = db_query($sql);
                     if (!$result) {
@@ -168,8 +176,8 @@ final class BudgetGeneratorService
 
         $sql = "INSERT IGNORE INTO " . TB_PREF . "ksf_quickbudget_approvals
             (tran_date, gl_account, status)
-            VALUES ('" . mysqli_real_escape_string($db, $tranDate) . "',
-                '" . mysqli_real_escape_string($db, $glAccount) . "',
+            VALUES ('" . safe_escape($db, $tranDate) . "',
+                '" . safe_escape($db, $glAccount) . "',
                 'pending')";
         db_query($sql, null);
     }
@@ -202,7 +210,7 @@ final class BudgetGeneratorService
 
         $sql = "SELECT MONTH(tran_date) as month, SUM(amount) as total
             FROM " . TB_PREF . "gl_trans
-            WHERE account = '" . mysqli_real_escape_string($db, $glAccount) . "'
+            WHERE account = '" . safe_escape($db, $glAccount) . "'
             AND YEAR(tran_date) = " . (int)$year . "
             GROUP BY MONTH(tran_date)";
         $result = db_query($sql, null);

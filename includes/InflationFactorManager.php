@@ -9,21 +9,23 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/CategoryDAO.php';
+
 class InflationFactorManager
 {
-    /** @var float Default rate (1.0 = no inflation) */
+    /** @var float Default rate (1.0 = no inflation means 0% inflation) */
     private $globalRate = 1.0;
 
-    /** @var array<string, float> Category rates indexed by category name */
+    /** @var array<string, float> Type rates indexed by chart_types.name (e.g., 'Utilities') */
+    private $typeRates = [];
+
+    /** @var array<string, float> Category rates indexed by chart_class.class_name (e.g., 'expenses') */
     private $categoryRates = [];
 
     /** @var array<string, float> GL-specific rates indexed by account code */
     private $glRates = [];
 
-    /** @var array<string, float> Group rates indexed by group ID */
-    private $groupRates = [];
-
-    /**
+        /**
      * Load rates from database.
      *
      * @return void
@@ -33,7 +35,7 @@ class InflationFactorManager
         global $db;
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors
-            WHERE factor_type IS NOT NULL ";
+            WHERE factor_type IS NOT NULL";
         
         $logFile = dirname(__DIR__) . '/logs/debug.log';
         file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: sql=" . $sql . "\n", FILE_APPEND);
@@ -60,11 +62,14 @@ class InflationFactorManager
                 case 'global':
                     $this->globalRate = $rate;
                     break;
+                case 'type':
+                    $this->typeRates[strtolower($ref)] = $rate;
+                    break;
                 case 'group':
-                    $this->groupRates[$ref] = $rate;
+                    $this->typeRates[$ref] = $rate;
                     break;
                 case 'category':
-                    $this->categoryRates[$ref] = $rate;
+                    $this->categoryRates[strtolower($ref)] = $rate;
                     break;
                 case 'gl':
                     $this->glRates[$ref] = $rate;
@@ -76,7 +81,7 @@ class InflationFactorManager
     /**
      * Set the global default inflation rate.
      *
-     * @param float $rate Rate multiplier (e.g., 1.0350)
+     * @param float $rate Rate as percentage (e.g., 3.5 for 3.5%)
      * @return void
      */
     public function setGlobalRate(float $rate): void
@@ -85,39 +90,39 @@ class InflationFactorManager
     }
 
     /**
+     * Set a type-level inflation rate (chart_types.name).
+     *
+     * @param string $typeName chart_types.name
+     * @param float $rate Rate as percentage
+     * @return void
+     */
+    public function setTypeRate(string $typeName, float $rate): void
+    {
+        $this->typeRates[strtolower($typeName)] = $rate;
+    }
+
+    /**
      * Set a category-level inflation rate.
      *
-     * @param string $category Category name (e.g., 'Expenses')
-     * @param float $rate Rate multiplier
+     * @param string $category Category name (chart_class.class_name)
+     * @param float $rate Rate as percentage
      * @return void
      */
     public function setCategoryRate(string $category, float $rate): void
     {
-        $this->categoryRates[$category] = $rate;
+        $this->categoryRates[strtolower($category)] = $rate;
     }
 
     /**
      * Set a GL-account specific inflation rate.
      *
      * @param string $glAccount GL account code
-     * @param float $rate Rate multiplier
+     * @param float $rate Rate as percentage
      * @return void
      */
     public function setGLRate(string $glAccount, float $rate): void
     {
         $this->glRates[$glAccount] = $rate;
-    }
-
-    /**
-     * Set a group-level inflation rate.
-     *
-     * @param string $group Group ID (chart_types.class_id)
-     * @param float $rate Rate multiplier
-     * @return void
-     */
-    public function setGroupRate(string $group, float $rate): void
-    {
-        $this->groupRates[$group] = $rate;
     }
 
     /**
@@ -129,7 +134,7 @@ class InflationFactorManager
     {
         return [
             'global' => $this->globalRate,
-            'group' => $this->groupRates,
+            'type' => $this->typeRates,
             'category' => $this->categoryRates,
             'gl' => $this->glRates,
         ];
@@ -157,39 +162,45 @@ class InflationFactorManager
         return $this->categoryRates[$category] ?? null;
     }
 
-    /**
-     * Get effective rate for a GL account.
-     * Resolves hierarchy: GL → Group → Category → Global.
-     *
-     * @param string $glAccount GL account code
-     * @return float Effective inflation rate
-     */
+/**
+      * Get effective rate for a GL account.
+      * Resolves hierarchy: GL → Type → Parent → Category → Global.
+      *
+      * @param string $glAccount GL account code
+      * @return float Effective inflation rate
+      */
     public function getRateForAccount(string $glAccount): float
     {
-        // Hierarchy: GL → Group → Category → Global
-        
         // GL-specific takes highest precedence
         if (isset($this->glRates[$glAccount])) {
             return $this->glRates[$glAccount];
         }
 
-        // Get account's group and category
-        $accountGroup = $this->getAccountGroup($glAccount);
-        
-        // Group-level override (from chart_types.class_id)
-        if ($accountGroup && isset($this->groupRates[$accountGroup])) {
-            return $this->groupRates[$accountGroup];
+        // Get account's type, parent, and class for resolution
+        $accountDetails = $this->getAccountDetails($glAccount);
+
+        // Type-level override (chart_types.name) - case-insensitive
+        if ($accountDetails && $this->typeRates) {
+            $typeKey = strtolower($accountDetails['type_name']);
+            if (isset($this->typeRates[$typeKey])) {
+                return $this->typeRates[$typeKey];
+            }
         }
 
-        // Category-level override based on account type
-        $accountCategory = $this->getAccountCategory($glAccount);
-        if ($accountCategory && isset($this->categoryRates[$accountCategory])) {
-            return $this->categoryRates[$accountCategory];
+        // Parent-level override (chart_types.class_id recursion)
+        if ($accountDetails && $this->typeRates && $accountDetails['type_id']) {
+            $parentRate = $this->getResolvedRateForType($accountDetails['type_id']);
+            if ($parentRate !== null) {
+                return $parentRate;
+            }
         }
 
-        // Fall back to checking generic 'Expenses' category for backward compatibility
-        if (isset($this->categoryRates['Expenses'])) {
-            return $this->categoryRates['Expenses'];
+        // Category-level override (chart_class.class_name)
+        if ($accountDetails && $this->categoryRates) {
+            $classKey = $accountDetails['class_name'];
+            if (isset($this->categoryRates[$classKey])) {
+                return $this->categoryRates[$classKey];
+            }
         }
 
         // Fall back to global default
@@ -197,23 +208,117 @@ class InflationFactorManager
     }
 
     /**
-     * Get account category name based on FA chart_master.account_type.
-     * Account types: 0=Bank, 1=Cash, 2=Receivables, 3=Payables, 4=Sales, 5=Purchases,
-     *                6=Inventory, 7=COGS, 8=Expense, 9=Other Income, 10=Other Expense
+     * Recursively resolve rate for a type by walking parent chain.
      *
-     * @param string $glAccount GL account code
-     * @return string|null Category name or null for balance sheet
+     * @param int|null $typeId chart_types.id
+     * @return float|null Rate or null if not found
      */
-    private function getAccountCategory(string $glAccount): ?string
+    private function getResolvedRateForType(?int $typeId): ?float
     {
-        // Check if we're in FA context (real $db connection)
-        global $db;
-        if (!is_resource($db) && !($db instanceof mysqli)) {
-            return null; // Not in FA context, cannot determine category
+        if (!$typeId || empty($this->typeRates)) {
+            return null;
         }
 
-        $sql = "SELECT account_type FROM " . TB_PREF . "chart_master
-            WHERE account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
+        static $checkedTypes = [];
+        if (isset($this->resolvedTypeCache[$typeId])) {
+            return $this->resolvedTypeCache[$typeId];
+        }
+        if (in_array($typeId, $checkedTypes)) {
+            return null; // Prevent infinite loop
+        }
+        $checkedTypes[] = $typeId;
+
+        // Check if this type has a rate
+        $typeName = $this->getTypeName($typeId);
+        if ($typeName && isset($this->typeRates[strtolower($typeName)])) {
+            $this->resolvedTypeCache[$typeId] = $this->typeRates[strtolower($typeName)];
+            return $this->resolvedTypeCache[$typeId];
+        }
+
+        // Get parent and recurse
+        $parentType = $this->getParentType($typeId);
+        if ($parentType) {
+            $rate = $this->getResolvedRateForType($parentType);
+            if ($rate !== null) {
+                $this->resolvedTypeCache[$typeId] = $rate;
+                return $rate;
+            }
+        }
+
+        return null;
+    }
+
+    /** @var array<int, float> Cache for resolved type rates */
+    private $resolvedTypeCache = [];
+
+    /**
+     * Get parent type ID by chart_types.id.
+     *
+     * @param int $typeId chart_types.id
+     * @return int|null Parent id or null
+     */
+    private function getParentType(int $typeId): ?int
+    {
+        global $db;
+
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
+        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types
+            WHERE id = " . (int)$typeId);
+        if (!$result) {
+            return null;
+        }
+        $row = db_fetch_assoc($result);
+
+        return $row && $row['class_id'] ? (int)$row['class_id'] : null;
+    }
+
+    /**
+     * Get type name by chart_types.id.
+     *
+     * @param int $typeId chart_types.id
+     * @return string|null Type name or null
+     */
+    private function getTypeName(int $typeId): ?string
+    {
+        global $db;
+
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
+        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types
+            WHERE id = " . (int)$typeId);
+        if (!$result) {
+            return null;
+        }
+        $row = db_fetch_assoc($result);
+
+        return $row ? $row['name'] : null;
+    }
+
+    /**
+     * Get account details: type_id, parent_id, and class_name.
+     * Returns null if DB unavailable or account not found.
+     *
+     * @param string $glAccount GL account code
+     * @return array|null ['type_id' => ..., 'parent_id' => ..., 'class_name' => ...] or null
+     */
+    private function getAccountDetails(string $glAccount): ?array
+    {
+        global $db;
+        // Skip DB check in test mode (db will be mocked)
+        if (empty($db)) {
+            return null;
+        }
+
+        $sql = "SELECT ct.id AS type_id, ct.name AS type_name, ct.class_id AS parent_id, cc.class_name
+            FROM " . TB_PREF . "chart_master cm
+            LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
+            LEFT JOIN " . TB_PREF . "chart_class cc ON ct.ctype = cc.cid
+            WHERE cm.account_code = '" . addslashes($glAccount) . "'";
         $result = db_query($sql);
         if (!$result) {
             return null;
@@ -224,47 +329,11 @@ class InflationFactorManager
             return null;
         }
 
-        static $typeMap = [
-            4 => 'Income',      // Sales
-            9 => 'Income',        // Other Income
-            5 => 'COGS',        // Purchases (costs of goods)
-            7 => 'COGS',        // COGS
-            8 => 'Expenses',    // Expense
-            10 => 'Expenses',    // Other Expense
-            0 => 'Assets',      // Bank
-            1 => 'Assets',      // Cash
-            2 => 'Assets',      // Receivables
-            3 => 'Assets',      // Payables
-            6 => 'Assets',      // Inventory
+        return [
+            'type_id' => (int)($row['type_id'] ?? 0),
+            'type_name' => $row['type_name'] ?? '',
+            'parent_id' => (int)($row['parent_id'] ?? 0),
+            'class_name' => strtolower($row['class_name'] ?? ''),
         ];
-
-        return $typeMap[(int)$row['account_type']] ?? null;
-    }
-
-    /**
-     * Get account group from chart_types table.
-     * Returns the class_id for the GL account (account_type maps to chart_types.id).
-     *
-     * @param string $glAccount GL account code
-     * @return string|null Group ID or null
-     */
-    private function getAccountGroup(string $glAccount): ?string
-    {
-        global $db;
-        if (!is_resource($db) && !($db instanceof mysqli)) {
-            return null;
-        }
-
-        // Get chart_types.class_id for the account's account_type
-        $sql = "SELECT ct.class_id FROM " . TB_PREF . "chart_master cm
-            LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
-            WHERE cm.account_code = '" . mysqli_real_escape_string($db, $glAccount) . "'";
-        $result = db_query($sql);
-        if (!$result) {
-            return null;
-        }
-        $row = db_fetch_assoc($result);
-
-        return $row && $row['class_id'] ? (string)$row['class_id'] : null;
     }
 }

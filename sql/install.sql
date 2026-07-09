@@ -1,16 +1,15 @@
 -- ksf_FA_QuickBudget install.sql
 -- Creates tables for inflation factors and budget scenarios
 
--- Inflation factors table for FR-01 through FR-04 (global, group, category, gl)
+-- Inflation factors table for FR-01 through FR-07
 CREATE TABLE IF NOT EXISTS `0_ksf_quickbudget_factors` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `factor_type` enum('global','group','category','gl') NOT NULL DEFAULT 'global',
+    `factor_type` varchar(32) NOT NULL DEFAULT 'global',
     `reference_id` varchar(64) NOT NULL DEFAULT '',
     `rate` decimal(10,4) NOT NULL DEFAULT '1.0000',
-    `company` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`,`company`),
-    KEY `idx_company_type` (`company`,`factor_type`)
+    UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`),
+    KEY `idx_factor_type` (`factor_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Budget scenarios for FR-13

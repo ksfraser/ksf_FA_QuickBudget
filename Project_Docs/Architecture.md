@@ -135,11 +135,22 @@ CREATE TABLE `0_ksf_quickbudget_approvals` (
 
 ```
 getInflationFactor(gl_account_code):
-    1. Check 0_ksf_quickbudget_factors for GL-specific rate
-    2. Else check group-level rate (from chart_types.class_id)
-    3. Else check category-level rate (by GL account type)
-    4. Else return global default rate
+    1. Check GL-specific rate (chart_master.account_code)
+    2. Else check Type rate (chart_types.name)
+    3. Else check Parent rate (chart_types.class_id)
+    4. Else check Category rate (chart_class.class_name)
+    5. Else return global default rate
 ```
+
+### 6-1. Factor Types Mapping
+
+| Factor Type | Reference Field | Source Table | Description |
+|-------------|---------------|------------|-------------|
+| `gl` | account_code | chart_master | Specific GL account override |
+| `type` | name | chart_types | Account type (e.g., "Utilities", "Bank") |
+| `group` | class_id | chart_types | Parent grouping within chart_types |
+| `category` | class_name | chart_class | High-level class (Assets, Income, Expenses) |
+| `global` | - | constant | Default rate for all accounts |
 
 ---
 
