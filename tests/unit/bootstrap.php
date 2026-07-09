@@ -25,6 +25,10 @@ if (!function_exists('mysqli_real_escape_string')) {
 // Mock FA database functions for unit tests
 if (!function_exists('db_query')) {
     function db_query($sql, $display_error = null) {
+        // Return true for INSERT/UPDATE/DELETE to simulate success
+        if (stripos($sql, 'INSERT') !== false || stripos($sql, 'UPDATE') !== false || stripos($sql, 'DELETE') !== false) {
+            return true;
+        }
         return new MockDbResult($sql);
     }
 }

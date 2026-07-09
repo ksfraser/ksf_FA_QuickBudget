@@ -561,17 +561,23 @@ function handle_save(): void
             $factor = null;
     }
 
+    $saveSuccess = true;
     if ($factor) {
         $saved = $repo->save($factor);
         error_log("handle_save: type={$type}, ref={$reference}, rate={$rate}, sessionCompany=" . ($_SESSION['company'] ?? 'not set') . ", saved=" . ($saved ? 'true' : 'false'));
         if (!$saved) {
             error_log("handle_save: save failed for type={$type}, ref={$reference}");
+            $saveSuccess = false;
         }
         $manager->loadFromDB();
         $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
     }
 
-    $msg = urlencode($isEdit ? _("Rate updated successfully") : _("Rate saved successfully"));
+    if (!$saveSuccess) {
+        $msg = urlencode(_("Error: Rate save failed - check logs"));
+    } else {
+        $msg = urlencode($isEdit ? _("Rate updated successfully") : _("Rate saved successfully"));
+    }
     session_write_close();
     header("Location: quickbudget_config.php?per_page=$perPage&message=$msg");
     exit;

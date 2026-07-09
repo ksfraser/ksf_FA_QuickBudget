@@ -84,6 +84,9 @@ final class InflationFactorRepository
             file_put_contents($logFile, date('Y-m-d H:i:s') . " save FAILED: {$dbError}\n", FILE_APPEND);
             return false;
         }
+        // INSERT/UPDATE may return true, null, or a result - all indicate success
+        $insertId = db_insert_id();
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " save SUCCESS: id={$insertId}\n", FILE_APPEND);
         return true;
     }
 
