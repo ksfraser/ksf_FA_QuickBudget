@@ -206,10 +206,28 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<div class='card-header'>" . _("Category Rates") . "</div>";
     echo "<div class='card-body'>";
     
-    // Pagination for category
+    // Existing rates table
+    echo "<table class='table table-sm table-striped border' border=1>";
+    echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
+    echo "<tbody>";
+    $odd = true;
+    foreach ($displayItems as $row) {
+        if (empty($row['ref'])) {
+            continue;
+        }
+        $odd = !$odd;
+        echo "<tr" . ($odd ? '' : ' class="tr_alt"') . ">";
+        echo "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
+        echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
+        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editCategoryRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
+        echo "</tr>";
+    }
+    if (empty($displayItems)) {
+        echo "<tr><td colspan='3' class='text-center'>" . _("No category rates configured") . "</td></tr>";
+    }
+    echo "</tbody></table>";
     
-    // Form for new/edit (before table)
-    
+    // Form for new/edit (after table)
     echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='category'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
@@ -223,70 +241,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<input type='number' step='any' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
     echo "<input type='submit' id='category_submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
     echo "</form>";
-    
-    // Existing rates table (after form)
-    echo "<table class='table table-sm table-striped border' border=1>";
-    echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
-    echo "<tbody>";
-    $odd = true;
-    foreach ($displayItems as $row) {
-        if (empty($row['ref'])) {
-            continue;
-        }
-        $odd = !$odd;
-        echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
-        echo "<td>" . htmlspecialchars($row['ref']) . "</td>";
-        echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editCategoryRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
-        echo "</tr>";
-    }
-    if (empty($displayItems)) {
-        echo "<tr><td colspan='3' class='text-center'>" . _("No category rates defined") . "</td></tr>";
-    }
-    echo "</tbody>";
-    echo "</table>";
-    
-    // Pagination for category
-    if ($totalPages > 1) {
-        echo "<div class='pagination'>";
-        for ($i = 1; $i <= $totalPages; $i++) {
-            $active = $i === $pageNum ? ' font-weight-bold' : '';
-            echo "<a href='quickbudget_config.php?per_page=$perPage&cat_page=$i' class='mx-1$active'>$i</a>";
-        }
-        echo "</div>";
-    }
-    
-    echo "<script>
-    function editCategoryRate(ref, rate) {
-        document.getElementById('category_ref').value = ref;
-        document.getElementById('category_rate').value = rate;
-        document.getElementById('category_is_edit').value = '1';
-        document.getElementById('category_submit').value = '" . _("Update Rate") . "';
-        document.getElementById('category_rate').focus();
-    }
-    function resetCategoryForm() {
-        document.getElementById('category_rate').value = '';
-        document.getElementById('category_is_edit').value = '0';
-        document.getElementById('category_submit').value = '" . _("Save Category Rate") . "';
-    }
-    function setCategoryRateFromSelect(value) {
-        var rateInput = document.getElementById('category_rate');
-        var existingRates = " . json_encode($allRates) . ";
-        if (existingRates[value]) {
-            rateInput.value = existingRates[value];
-            document.getElementById('category_is_edit').value = '1';
-            document.getElementById('category_submit').value = '" . _("Update Rate") . "';
-        } else {
-            rateInput.value = '';
-            document.getElementById('category_is_edit').value = '0';
-            document.getElementById('category_submit').value = '" . _("Save Category Rate") . "';
-        }
-    }
-    </script>";
-    
-    echo "</div>";
-    echo "</div>";
-    echo "</div>";
+    echo "</div></div></div>";
 }
 
 function renderTypeSection(int $perPage, array $typeRates = []): void
