@@ -223,10 +223,13 @@ function handle_save(): void
             $manager->setCategoryRate($reference, $rate);
             $factor = new InflationFactorDTO($type, $reference, $rate);
             break;
-        case 'type':
-            $manager->setTypeRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, (string)$reference, $rate);
-            break;
+case 'type':
+             $typeDAO = new TypeDAO();
+             // Convert name to ID for stable storage
+             $typeId = $typeDAO->getTypeIdByName($reference);
+             $manager->setTypeRate($reference, $rate);
+             $factor = new InflationFactorDTO($type, (string)$typeId, $rate);
+             break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
             $factor = new InflationFactorDTO($type, (string)$reference, $rate);

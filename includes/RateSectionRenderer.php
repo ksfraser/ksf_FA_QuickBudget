@@ -36,11 +36,11 @@ class RateSectionRenderer
             if ($showCodeWithRef) {
                 $output .= "<td>" . htmlspecialchars((string)$row['ref'] . ' - ' . $row['name']) . "</td>";
             } else {
-                // For types: ref is the rate key, name is the display name
                 $output .= "<td>" . htmlspecialchars((string)$row['name']) . "</td>";
             }
             $output .= "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-            $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '{$row['ref']}', {$row['rate']})\">" . _("Edit") . "</button></td>";
+            // Pass the name (not the key) to edit, since form uses names
+            $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '{$row['name']}', {$row['rate']})\">" . _("Edit") . "</button></td>";
             $output .= "</tr>";
         }
         if (empty($displayItems)) {
@@ -102,7 +102,7 @@ class RateSectionRenderer
         
         $typeRates = $rates['type'] ?? [];
         if (!empty($allTypes)) {
-            // allTypes is lowercase_name => display_name, typeRates is lowercase_name => rate
+            // allTypes is lowercase_name => display_name, typeRates is already keyed by lowercase_name
             foreach ($allTypes as $key => $name) {
                 $rate = $typeRates[$key] ?? '—';
                 $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";

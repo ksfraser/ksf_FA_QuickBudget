@@ -104,4 +104,28 @@ final class TypeDAO
 
         return $row && $row['class_id'] ? (int)$row['class_id'] : null;
     }
+
+    /**
+     * Get type ID by name.
+     * Used when saving rates to store stable ID instead of mutable name.
+     *
+     * @param string $typeName chart_types.name
+     * @return int|null chart_types.id or null if not found
+     */
+    public function getTypeIdByName(string $typeName): ?int
+    {
+        global $db;
+
+        if (!is_resource($db) && !($db instanceof mysqli)) {
+            return null;
+        }
+
+        $result = db_query("SELECT id FROM " . TB_PREF . "chart_types WHERE name = '" . mysqli_real_escape_string($db, $typeName) . "'");
+        if (!$result) {
+            return null;
+        }
+        $row = db_fetch_assoc($result);
+
+        return $row ? (int)$row['id'] : null;
+    }
 }

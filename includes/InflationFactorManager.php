@@ -45,7 +45,6 @@ class InflationFactorManager
         
         $rows = db_num_rows($result);
         error_log("loadFromDB: found {$rows} rows");
-        error_log("loadFromDB: type=" . (db_num_rows($result) > 0 ? "has data" : "empty"));
 
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
@@ -55,6 +54,15 @@ class InflationFactorManager
                 continue;
             }
             error_log("loadFromDB: type={$type}, ref={$ref}, rate={$rate}");
+            
+            // For type rates, resolve ID to name for display
+            if ($type === 'type' && is_numeric($ref)) {
+                $typeName = $this->getTypeNameById((int)$ref);
+                if ($typeName) {
+                    $ref = strtolower($typeName);
+                }
+            }
+            
             switch ($type) {
                 case 'global':
                     $this->globalRate = $rate;
@@ -70,6 +78,30 @@ class InflationFactorManager
                     break;
             }
         }
+    }
+    
+    /**
+     * Get type name by chart_types.id.
+     * Used when loading rates stored by ID.
+     *
+     * @param int $typeId chart_types.id
+     * @return string|null Type name or null
+     */
+    private function getTypeNameById(int $typeId): ?string
+    {
+        global $db;
+
+        if (empty($db)) {
+            return null;
+        }
+
+        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
+        if (!$result) {
+            return null;
+        }
+        $row = db_fetch_assoc($result);
+
+        return $row ? $row['name'] : null;
     }
 
     /**
