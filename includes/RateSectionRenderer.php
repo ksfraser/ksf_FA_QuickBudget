@@ -97,4 +97,28 @@ class RateSectionRenderer
         $output .= "</div></div>";
         return $output;
     }
+
+    public static function renderTypeCache(array $rates): string
+    {
+        $output = "<div class='col-md-6'>";
+        $output .= "<div class='card mb-3' style='border: 1px solid #ddd;'>";
+        $output .= "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
+        $output .= "<div class='card-body'>";
+        $output .= "<table class='table table-sm table-bordered' style='font-size: 0.85em;'>";
+        $output .= "<thead><tr><th>" . _("Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
+        $output .= "<tbody>";
+        
+        $typeRates = $rates['type'] ?? [];
+        if (!empty($typeRates)) {
+            foreach ($typeRates as $name => $rate) {
+                $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
+            }
+        } else {
+            $output .= "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
+        }
+        
+        $output .= "</tbody></table>";
+        $output .= "</div></div></div>";
+        return $output;
+    }
 }

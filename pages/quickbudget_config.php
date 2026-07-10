@@ -76,33 +76,7 @@ echo "<div class='row'>";
     renderGlobalSection($manager, $perPage);
     
     // Type Rate Cache display (read-only summary)
-    $typeRates = [];
-    $cacheError = '';
-    try {
-        $allRates = $manager->getAllRates();
-        $typeRates = $allRates['type'] ?? [];
-    } catch (Throwable $e) {
-        $cacheError = $e->getMessage();
-        error_log("Type Rate Cache error: " . $cacheError);
-    }
-    echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
-    echo "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
-    echo "<div class='card-body'>";
-    echo "<table class='table table-sm table-bordered' style='font-size: 0.85em;'>";
-    echo "<thead><tr><th>" . _("Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
-    echo "<tbody>";
-    if (!empty($cacheError)) {
-        echo "<tr><td colspan='2' class='text-danger'>" . _("Error loading rates") . "</td></tr>";
-    } elseif (!empty($typeRates)) {
-        foreach ($typeRates as $name => $rate) {
-            echo "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
-        }
-    } else {
-        echo "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
-    }
-    echo "</tbody></table>";
-    echo "</div></div></div>";
+    echo RateSectionRenderer::renderTypeCache($manager->getAllRates());
 
     
 // Category Rate Section
