@@ -39,6 +39,7 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
     include_once(dirname(__DIR__) . '/includes/ScenarioDTO.php');
     include_once(dirname(__DIR__) . '/includes/ScenarioRepository.php');
+    include_once(dirname(__DIR__) . '/includes/CategoryDAO.php');
     include_once(dirname(__DIR__) . '/includes/TypeDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
     include_once(dirname(__DIR__) . '/includes/RateSectionRenderer.php');
@@ -162,7 +163,8 @@ function renderGlobalSection(InflationFactorManager $manager, int $perPage): voi
 
 function renderCategorySection(InflationFactorManager $manager, int $perPage): void
 {
-    $categories = ['Income', 'COGS', 'Expenses', 'Assets'];
+    $categoryDAO = new CategoryDAO();
+    $categories = $categoryDAO->getAllCategories();
     $allRates = $manager->getAllRates()['category'] ?? [];
     
     echo RateSectionRenderer::render('category', 'Category Rates', 'Category', $allRates, $categories, $perPage, 'cat_page');
