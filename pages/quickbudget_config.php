@@ -39,7 +39,7 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/InflationFactorManager.php');
     include_once(dirname(__DIR__) . '/includes/ScenarioDTO.php');
     include_once(dirname(__DIR__) . '/includes/ScenarioRepository.php');
-    include_once(dirname(__DIR__) . '/includes/GroupDAO.php');
+    include_once(dirname(__DIR__) . '/includes/TypeDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
 
     $manager = new InflationFactorManager();
@@ -291,7 +291,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
 
 function renderTypeSection(int $perPage, array $typeRates = []): void
 {
-    $groupDAO = new GroupDAO();
+    $groupDAO = new TypeDAO();
     $allTypes = $groupDAO->getAllGroups();
     
     if (empty($allTypes)) {

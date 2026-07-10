@@ -1,25 +1,25 @@
 <?php
 /**
- * GroupDAO
+ * TypeDAO
  *
- * Repository for GL group data from chart_types.
- * Groups are chart_types entries for display in DDL.
- * Supports FR-03: Group-level inflation factors.
+ * Repository for GL type data from chart_types.
+ * Types are chart_types entries for display in DDL.
+ * Supports FR-03: Type-level inflation factors.
  *
  * Hierarchy for rate resolution:
  *   GL → Type (chart_types.name) → Parent (chart_types.class_id) → Category (chart_class) → Global
  */
 declare(strict_types=1);
 
-final class GroupDAO
+final class TypeDAO
 {
     /**
-     * Get all chart types for group rate configuration.
+     * Get all chart types for type rate configuration.
      * Returns id => name mapping for DDL.
      *
      * @return array<int, string> id => name
      */
-    public function getAllGroups(): array
+    public function getAllTypes(): array
     {
         global $db;
 
@@ -27,21 +27,20 @@ final class GroupDAO
             return [];
         }
 
-        $sql = "SELECT id, name FROM " . TB_PREF . "chart_types
-            ORDER BY id";
+        $sql = "SELECT id, name FROM " . TB_PREF . "chart_types ORDER BY id";
         $result = db_query($sql);
 
-        $groups = [];
+        $types = [];
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $groups[(int)$row['id']] = $row['name'];
+                $types[(int)$row['id']] = $row['name'];
             }
         } else {
             $error = $db ? (method_exists($db, 'error') ? $db->error : 'no error property') : 'no db connection';
-            error_log("GroupDAO::getAllGroups query failed: $sql - DB error: $error");
+            error_log("TypeDAO::getAllTypes query failed: $sql - DB error: $error");
         }
 
-        return $groups;
+        return $types;
     }
 
     /**
@@ -58,8 +57,7 @@ final class GroupDAO
             return null;
         }
 
-        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types
-            WHERE id = " . (int)$typeId);
+        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
         if (!$result) {
             return null;
         }
@@ -82,8 +80,7 @@ final class GroupDAO
             return null;
         }
 
-        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types
-            WHERE id = " . (int)$typeId);
+        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
         if (!$result) {
             return null;
         }
