@@ -65,9 +65,6 @@ class InflationFactorManager
                 case 'type':
                     $this->typeRates[strtolower($ref)] = $rate;
                     break;
-                case 'group':
-                    $this->typeRates[$ref] = $rate;
-                    break;
                 case 'category':
                     $this->categoryRates[strtolower($ref)] = $rate;
                     break;

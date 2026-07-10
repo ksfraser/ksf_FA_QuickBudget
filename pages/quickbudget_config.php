@@ -79,13 +79,21 @@ echo "<div class='row'>";
     echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
     echo "<div class='card-body'>";
-    echo "<table class='table table-sm table-bordered' style='font-size: 0.85em; max-height: 200px; overflow-y: auto; display: block;'>";
+    try {
+        $typeRates = $manager->getAllRates()['type'] ?? [];
+        error_log("Type Rate Cache: got " . count($typeRates) . " rates");
+    } catch (Exception $e) {
+        $typeRates = [];
+        error_log("Type Rate Cache error: " . $e->getMessage());
+    }
+    echo "<table class='table table-sm table-bordered' style='font-size: 0.85em;'>";
     echo "<thead><tr><th>" . _("Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
     echo "<tbody>";
-    foreach ($manager->getAllRates()['type'] ?? [] as $name => $rate) {
-        echo "<tr><td>" . htmlspecialchars($name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
-    }
-    if (empty(($manager->getAllRates()['type'] ?? []))) {
+    if (!empty($typeRates)) {
+        foreach ($typeRates as $name => $rate) {
+            echo "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
+        }
+    } else {
         echo "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
     }
     echo "</tbody></table>";
