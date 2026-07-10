@@ -76,15 +76,16 @@ echo "<div class='row'>";
     // Global Rate Section
     renderGlobalSection($manager, $perPage);
     
-    // Type Rate Cache display (read-only summary)
-    echo RateSectionRenderer::renderTypeCache($manager->getAllRates());
-
+// Type Rate Cache display (read-only summary)
+    $typeDAO = new TypeDAO();
+    $allTypes = $typeDAO->getAllTypes();
+    echo RateSectionRenderer::renderTypeCache($manager->getAllRates(), $allTypes);
     
-// Category Rate Section
+    // Category Rate Section
     renderCategorySection($manager, $perPage);
-
+    
     // Type Rate Section
-    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? []);
+    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? [], $allTypes);
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
@@ -170,11 +171,8 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo RateSectionRenderer::render('category', 'Category Rates', 'Category', $allRates, $categories, $perPage, 'cat_page');
 }
 
-function renderTypeSection(int $perPage, array $typeRates = []): void
+function renderTypeSection(int $perPage, array $typeRates = [], array $allTypes = []): void
 {
-    $typeDAO = new TypeDAO();
-    $allTypes = $typeDAO->getAllTypes();
-    
     if (empty($allTypes)) {
         echo "<div class='col-md-6'>";
         echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
