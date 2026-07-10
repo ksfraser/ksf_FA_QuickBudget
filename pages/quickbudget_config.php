@@ -41,6 +41,7 @@ function render_view(): void
     include_once(dirname(__DIR__) . '/includes/ScenarioRepository.php');
     include_once(dirname(__DIR__) . '/includes/TypeDAO.php');
     include_once(dirname(__DIR__) . '/includes/GLAccountDAO.php');
+    include_once(dirname(__DIR__) . '/includes/RateSectionRenderer.php');
 
     $manager = new InflationFactorManager();
     $manager->loadFromDB();
@@ -190,58 +191,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     $categories = ['Income', 'COGS', 'Expenses', 'Assets'];
     $allRates = $manager->getAllRates()['category'] ?? [];
     
-    // Paginate rates
-    $rateItems = [];
-    foreach ($allRates as $ref => $rate) {
-        $rateItems[] = ['ref' => $ref, 'rate' => $rate];
-    }
-    $totalItems = count($rateItems);
-    $totalPages = max(1, ceil($totalItems / $perPage));
-    $pageNum = min(1, (int)($_GET['cat_page'] ?? 1));
-    $offset = ($pageNum - 1) * $perPage;
-    $displayItems = array_slice($rateItems, $offset, $perPage);
-    
-    echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
-    echo "<div class='card-header'>" . _("Category Rates") . "</div>";
-    echo "<div class='card-body'>";
-    
-    // Existing rates table
-    echo "<table class='table table-sm table-striped border' border=1>";
-    echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
-    echo "<tbody>";
-    $odd = true;
-    foreach ($displayItems as $row) {
-        if (empty($row['ref'])) {
-            continue;
-        }
-        $odd = !$odd;
-        echo "<tr" . ($odd ? '' : ' class="tr_alt"') . ">";
-        echo "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
-        echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editCategoryRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
-        echo "</tr>";
-    }
-    if (empty($displayItems)) {
-        echo "<tr><td colspan='3' class='text-center'>" . _("No category rates configured") . "</td></tr>";
-    }
-    echo "</tbody></table>";
-    
-    // Form for new/edit (after table)
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='category-form' class='p-2 border rounded'>";
-    echo "<input type='hidden' name='type' value='category'>";
-    echo "<input type='hidden' name='per_page' value='$perPage'>";
-    echo "<input type='hidden' name='is_edit' id='category_is_edit' value='0'>";
-    echo "<select name='reference' id='category_ref' class='form-control mb-2' onchange=\"setCategoryRateFromSelect(this.value)\">";
-    foreach ($categories as $cat) {
-        $selected = isset($allRates[$cat]) ? ' selected' : '';
-        echo "<option value='$cat'$selected>$cat</option>";
-    }
-    echo "</select>";
-    echo "<input type='number' step='any' name='rate' id='category_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' id='category_submit' class='btn btn-primary' value='" . _("Save Category Rate") . "'>";
-    echo "</form>";
-    echo "</div></div></div>";
+    echo RateSectionRenderer::render('category', 'Category Rates', 'Category', $allRates, $categories, $perPage, 'cat_page');
 }
 
 function renderTypeSection(int $perPage, array $typeRates = []): void
@@ -254,73 +204,12 @@ function renderTypeSection(int $perPage, array $typeRates = []): void
         echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
         echo "<div class='card-header'>" . _("Type Rates") . "</div>";
         echo "<div class='card-body'>";
-        echo "<p class='text-warning'>DEBUG: allTypes empty - check DB connection";
+        echo "<p class='text-warning'>No types available in chart_types table";
         echo "</div></div></div>";
         return;
     }
     
-    $allRates = $typeRates ?: ($_SESSION['ksf_qb_factors']['type'] ?? []);
-    $rateItems = [];
-    foreach ($allRates as $ref => $rate) {
-        $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $ref];
-    }
-    $totalItems = count($rateItems);
-    $totalPages = max(1, ceil($totalItems / $perPage));
-    $pageNum = min(1, (int)($_GET['type_page'] ?? 1));
-    $offset = ($pageNum - 1) * $perPage;
-    $displayItems = array_slice($rateItems, $offset, $perPage);
-    
-    echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
-    echo "<div class='card-header'>" . _("Type Rates") . "</div>";
-    echo "<div class='card-body' style='border: 1px solid #ddd; margin-top: 10px;'>";
-    
-    // Pagination for types
-    if ($totalPages > 1) {
-        echo "<div class='pagination'>";
-        for ($i = 1; $i <= $totalPages; $i++) {
-            $active = $i === $pageNum ? ' font-weight-bold' : '';
-            echo "<a href='?type_page=$i&per_page=$perPage' class='$active'>$i</a> ";
-        }
-        echo "</div>";
-    }
-    
-    // Existing rates table
-    echo "<table class='table table-sm table-striped border' border=1>";
-    echo "<thead><tr><th>" . _("Type") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
-    echo "<tbody>";
-    $odd = true;
-    foreach ($displayItems as $row) {
-        if (empty($row['ref'])) {
-            continue;
-        }
-        $odd = !$odd;
-        echo "<tr" . ($odd ? '' : ' class="tr_alt"') . ">";
-        echo "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
-        echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editTypeRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
-        echo "</tr>";
-    }
-    if (empty($displayItems)) {
-        echo "<tr><td colspan='3' class='text-center'>" . _("No type rates configured") . "</td></tr>";
-    }
-    echo "</tbody></table>";
-    
-    // Form for new/edit (after table)
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='type-form' class='p-2 border rounded'>";
-    echo "<input type='hidden' name='type' value='type'>";
-    echo "<input type='hidden' name='per_page' value='$perPage'>";
-    echo "<input type='hidden' name='is_edit' id='type_is_edit' value='0'>";
-    echo "<select name='reference' id='type_ref' class='form-control mb-2' onchange=\"setTypeRateFromSelect(this.value)\">";
-    foreach ($allTypes as $id => $name) {
-        $selected = isset($allRates[$name]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($name) . "'$selected>" . htmlspecialchars($name) . "</option>";
-    }
-    echo "</select>";
-    echo "<input type='number' step='any' name='rate' id='type_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' id='type_submit' class='btn btn-primary' value='" . _("Save Type Rate") . "'>";
-    echo "</form>";
-    echo "</div></div></div>";
+    echo RateSectionRenderer::render('type', 'Type Rates', 'Type', $typeRates, $allTypes, $perPage, 'type_page');
 }
 
 function renderGLSection(int $perPage, array $glRates = []): void
@@ -328,102 +217,7 @@ function renderGLSection(int $perPage, array $glRates = []): void
     $glDAO = new GLAccountDAO();
     $allGL = $glDAO->getAllGLAccounts();
     
-    // Get existing GL rates (prefer passed-in rates, fallback to session)
-    $allRates = $glRates ?: ($_SESSION['ksf_qb_factors']['gl'] ?? []);
-    
-    // Paginate rates
-    $rateItems = [];
-    foreach ($allRates as $ref => $rate) {
-        $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $allGL[$ref] ?? $ref];
-    }
-    $totalItems = count($rateItems);
-    $totalPages = max(1, ceil($totalItems / $perPage));
-    $pageNum = min(1, (int)($_GET['gl_page'] ?? 1));
-    $offset = ($pageNum - 1) * $perPage;
-    $displayItems = array_slice($rateItems, $offset, $perPage);
-    
-    echo "<div class='col-md-6'>";
-    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
-    echo "<div class='card-header'>" . _("GL-Specific Rates") . "</div>";
-    echo "<div class='card-body'>";
-    
-    // Existing rates table
-    echo "<table class='table table-sm table-striped border'>";
-    echo "<thead><tr><th>" . _("GL Account") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
-    echo "<tbody>";
-    $odd = true;
-    foreach ($displayItems as $row) {
-        if (empty($row['ref'])) {
-            continue;
-        }
-        $odd = !$odd;
-        echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
-        echo "<td>" . htmlspecialchars($row['ref'] . ' - ' . $row['name']) . "</td>";
-        echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-        echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editGLRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
-        echo "</tr>";
-    }
-    if (empty($displayItems)) {
-        echo "<tr><td colspan='3' class='text-center'>" . _("No GL-specific rates defined") . "</td></tr>";
-    }
-    echo "</tbody>";
-    echo "</table>";
-    
-    // Pagination for GL
-    if ($totalPages > 1) {
-        echo "<div class='pagination'>";
-        for ($i = 1; $i <= $totalPages; $i++) {
-            $active = $i === $pageNum ? ' font-weight-bold' : '';
-            echo "<a href='quickbudget_config.php?per_page=$perPage&gl_page=$i' class='mx-1$active'>$i</a>";
-        }
-        echo "</div>";
-    }
-    
-    // Form for new/edit
-    
-    echo "<form method='post' action='quickbudget_config.php?action=save' id='gl-form' class='p-2 border rounded'>";
-    echo "<input type='hidden' name='type' value='gl'>";
-    echo "<input type='hidden' name='per_page' value='$perPage'>";
-    echo "<input type='hidden' name='is_edit' id='gl_is_edit' value='0'>";
-    echo "<select name='reference' id='gl_ref' class='form-control mb-2' onchange=\"setGLRateFromSelect(this.value)\">";
-    foreach ($allGL as $code => $name) {
-        if (empty($code)) {
-            continue;
-        }
-        $selected = isset($allRates[$code]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars((string)$code) . "'$selected>" . htmlspecialchars((string)$code . ' - ' . $name) . "</option>";
-    }
-    echo "</select>";
-    echo "<input type='number' step='any' name='rate' id='gl_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-    echo "<input type='submit' id='gl_submit' class='btn btn-primary' value='" . _("Save GL Rate") . "'>";
-    echo "</form>";
-    
-    echo "<script>
-    function editGLRate(ref, rate) {
-        document.getElementById('gl_ref').value = ref;
-        document.getElementById('gl_rate').value = rate;
-        document.getElementById('gl_is_edit').value = '1';
-        document.getElementById('gl_submit').value = '" . _("Update Rate") . "';
-        document.getElementById('gl_rate').focus();
-    }
-    function setGLRateFromSelect(value) {
-        var rateInput = document.getElementById('gl_rate');
-        var existingRates = " . json_encode($allRates) . ";
-        if (existingRates[value]) {
-            rateInput.value = existingRates[value];
-            document.getElementById('gl_is_edit').value = '1';
-            document.getElementById('gl_submit').value = '" . _("Update Rate") . "';
-        } else {
-            rateInput.value = '';
-            document.getElementById('gl_is_edit').value = '0';
-            document.getElementById('gl_submit').value = '" . _("Save GL Rate") . "';
-        }
-    }
-    </script>";
-    
-    echo "</div>";
-    echo "</div>";
-    echo "</div>";
+    echo RateSectionRenderer::render('gl', 'GL-Specific Rates', 'GL Account', $glRates, $allGL, $perPage, 'gl_page', true);
 }
 
 function handle_save(): void

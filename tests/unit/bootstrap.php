@@ -99,4 +99,5 @@ require_once __DIR__ . '/../../includes/BudgetEntryDTO.php';
 require_once __DIR__ . '/../../includes/InflationFactorDTO.php';
 require_once __DIR__ . '/../../includes/CategoryDAO.php';
 require_once __DIR__ . '/../../includes/InflationFactorManager.php';
+require_once __DIR__ . '/../../includes/RateSectionRenderer.php';
 require_once __DIR__ . '/../../src/Service/BudgetGeneratorService.php';

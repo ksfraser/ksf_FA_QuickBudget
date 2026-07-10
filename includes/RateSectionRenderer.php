@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 class RateSectionRenderer
 {
-    public static function render(string $type, string $label, string $refLabel, array $rates, array $options, int $perPage, string $pageParam): string
+    public static function render(string $type, string $label, string $refLabel, array $rates, array $options, int $perPage, string $pageParam, bool $showCodeWithRef = false): string
     {
         $rateItems = [];
         foreach ($rates as $ref => $rate) {
@@ -20,24 +20,6 @@ class RateSectionRenderer
         $output .= "<div class='card-header'>" . _($label) . "</div>";
         $output .= "<div class='card-body'>";
 
-        $output .= "<hr>";
-        $output .= "<form method='post' action='quickbudget_config.php?action=save' id='{$type}-form' class='p-2 border rounded'>";
-        $output .= "<input type='hidden' name='type' value='{$type}'>";
-        $output .= "<input type='hidden' name='per_page' value='$perPage'>";
-        $output .= "<input type='hidden' name='is_edit' id='{$type}_is_edit' value='0'>";
-        $output .= "<select name='reference' id='{$type}_ref' class='form-control mb-2' onchange=\"setRateFromSelect('{$type}', this.value)\">";
-        foreach ($options as $id => $name) {
-            if (empty($id)) {
-                continue;
-            }
-            $selected = isset($rates[$id]) ? ' selected' : '';
-            $output .= "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name . ' (' . $id . ')') . "</option>";
-        }
-        $output .= "</select>";
-        $output .= "<input type='number' step='any' name='rate' id='{$type}_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
-        $output .= "<input type='submit' id='{$type}_submit' class='btn btn-primary' value='" . _("Save {$label}") . "'>";
-        $output .= "</form>";
-
         $output .= "<table class='table table-sm table-striped'>";
         $output .= "<thead><tr><th>" . _($refLabel) . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
         $output .= "<tbody>";
@@ -49,7 +31,11 @@ class RateSectionRenderer
             }
             $odd = !$odd;
             $output .= "<tr" . ($odd ? '' : " class=\"tr_alt\"") . ">";
-            $output .= "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
+            if ($showCodeWithRef) {
+                $output .= "<td>" . htmlspecialchars((string)$row['ref'] . ' - ' . $row['name']) . "</td>";
+            } else {
+                $output .= "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
+            }
             $output .= "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
             $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '{$row['ref']}', {$row['rate']})\">" . _("Edit") . "</button></td>";
             $output .= "</tr>";
@@ -58,6 +44,46 @@ class RateSectionRenderer
             $output .= "<tr><td colspan='3' class='text-center'>" . _("No " . strtolower($label) . " defined") . "</td></tr>";
         }
         $output .= "</tbody></table>";
+
+        $existingRatesJson = json_encode($rates);
+        $output .= "<form method='post' action='quickbudget_config.php?action=save' id='{$type}-form' class='p-2 border rounded'>";
+        $output .= "<input type='hidden' name='type' value='{$type}'>";
+        $output .= "<input type='hidden' name='per_page' value='$perPage'>";
+        $output .= "<input type='hidden' name='is_edit' id='{$type}_is_edit' value='0'>";
+        $output .= "<select name='reference' id='{$type}_ref' class='form-control mb-2' onchange=\"setRateFromSelect('{$type}', this.value)\">";
+        foreach ($options as $id => $name) {
+            if (empty($id)) {
+                continue;
+            }
+            $selected = isset($rates[$id]) ? ' selected' : '';
+            $output .= "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
+        }
+        $output .= "</select>";
+        $output .= "<input type='number' step='any' name='rate' id='{$type}_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
+        $output .= "<input type='submit' id='{$type}_submit' class='btn btn-primary' value='" . _("Save {$label}") . "'>";
+        $output .= "</form>";
+
+        $output .= "<script>";
+        $output .= "function setRateFromSelect(type, value) {";
+        $output .= "var rateInput = document.getElementById(type + '_rate');";
+        $output .= "var existingRates = $existingRatesJson;";
+        $output .= "if (existingRates[value]) {";
+        $output .= "rateInput.value = existingRates[value];";
+        $output .= "document.getElementById(type + '_is_edit').value = '1';";
+        $output .= "document.getElementById(type + '_submit').value = '" . _("Update Rate") . "';";
+        $output .= "} else {";
+        $output .= "rateInput.value = '';";
+        $output .= "document.getElementById(type + '_is_edit').value = '0';";
+        $output .= "document.getElementById(type + '_submit').value = '" . _("Save {$label}") . "';";
+        $output .= "}}";
+        $output .= "function editRate(type, ref, rate) {";
+        $output .= "document.getElementById(type + '_ref').value = ref;";
+        $output .= "document.getElementById(type + '_rate').value = rate;";
+        $output .= "document.getElementById(type + '_is_edit').value = '1';";
+        $output .= "document.getElementById(type + '_submit').value = '" . _("Update Rate") . "';";
+        $output .= "document.getElementById(type + '_rate').focus();";
+        $output .= "}";
+        $output .= "</script>";
 
         if ($totalPages > 1) {
             $output .= "<div class='pagination'>";
