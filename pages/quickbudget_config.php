@@ -15,9 +15,6 @@ add_access_extensions();
 
 global $db;
 
-// Debug: log page entry
-$logFile = dirname(__DIR__) . '/logs/debug.log';
-file_put_contents($logFile, date('Y-m-d H:i:s') . " quickbudget_config.php loaded\n", FILE_APPEND);
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
 switch ($page) {
@@ -77,15 +74,29 @@ echo "<div class='row'>";
     // Global Rate Section
     renderGlobalSection($manager, $perPage);
     
-    // Type Rate Cache display - DISABLED for debugging
-    // Temporarily disabled - see issue
-    // Category Rate Section
+    // Type Rate Cache display
+    echo "<div class='col-md-6'>";
+    echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
+    echo "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
+    echo "<div class='card-body'>";
+    echo "<table class='table table-sm table-bordered' style='font-size: 0.85em; max-height: 200px; overflow-y: auto; display: block;'>";
+    echo "<thead><tr><th>" . _("Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
+    echo "<tbody>";
+    foreach ($manager->getAllRates()['type'] ?? [] as $name => $rate) {
+        echo "<tr><td>" . htmlspecialchars($name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
+    }
+    if (empty(($manager->getAllRates()['type'] ?? []))) {
+        echo "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
+    }
+    echo "</tbody></table>";
+    echo "</div></div></div>";
+
+    
+// Category Rate Section
     renderCategorySection($manager, $perPage);
 
     // Type Rate Section
     renderTypeSection($perPage, $manager->getAllRates()['type'] ?? []);
-
-    
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
@@ -205,16 +216,7 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
-    // DEBUG: Log each rate item
-    foreach ($rateItems as $debugRow) {
-        if (!empty($debugRow['ref'])) {
-            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
-        }
-    }
-    
     $odd = true;
-    // DEBUG
-    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;
@@ -280,9 +282,6 @@ function renderTypeSection(int $perPage, array $typeRates = []): void
     $groupDAO = new GroupDAO();
     $allTypes = $groupDAO->getAllGroups();
     
-    // DEBUG: Log type section entry
-    file_put_contents(dirname(__DIR__) . '/logs/debug.log', date('Y-m-d H:i:s') . " renderTypeSection: allTypes count=" . count($allTypes) . "\n", FILE_APPEND);
-    
     if (empty($allTypes)) {
         echo "<div class='col-md-6'>";
         echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
@@ -347,16 +346,7 @@ echo "<div class='col-md-6'>";
     echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Type") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
-    // DEBUG: Log each rate item
-    foreach ($rateItems as $debugRow) {
-        if (!empty($debugRow['ref'])) {
-            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
-        }
-    }
-    
     $odd = true;
-    // DEBUG
-    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;
@@ -449,16 +439,7 @@ function renderGLSection(int $perPage, array $glRates = []): void
     echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("GL Account") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
-    // DEBUG: Log each rate item
-    foreach ($rateItems as $debugRow) {
-        if (!empty($debugRow['ref'])) {
-            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
-        }
-    }
-    
     $odd = true;
-    // DEBUG
-    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;

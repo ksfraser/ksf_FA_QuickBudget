@@ -4,3 +4,11 @@
             WHERE factor_type IS NOT NULL
 2026-07-10 15:46:13 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
             WHERE factor_type IS NOT NULL
+2026-07-10 16:15:43 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
+2026-07-10 16:18:39 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
+2026-07-10 16:19:17 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
+2026-07-10 16:19:55 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
