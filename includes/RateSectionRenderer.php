@@ -63,26 +63,10 @@ class RateSectionRenderer
         $output .= "<input type='submit' id='{$type}_submit' class='btn btn-primary' value='" . _("Save {$label}") . "'>";
         $output .= "</form>";
 
-        $output .= "<script>";
-        $output .= "function setRateFromSelect(type, value) {";
-        $output .= "var rateInput = document.getElementById(type + '_rate');";
-        $output .= "var existingRates = $existingRatesJson;";
-        $output .= "if (existingRates[value]) {";
-        $output .= "rateInput.value = existingRates[value];";
-        $output .= "document.getElementById(type + '_is_edit').value = '1';";
-        $output .= "document.getElementById(type + '_submit').value = '" . _("Update Rate") . "';";
-        $output .= "} else {";
-        $output .= "rateInput.value = '';";
-        $output .= "document.getElementById(type + '_is_edit').value = '0';";
-        $output .= "document.getElementById(type + '_submit').value = '" . _("Save {$label}") . "';";
-        $output .= "}}";
-        $output .= "function editRate(type, ref, rate) {";
-        $output .= "document.getElementById(type + '_ref').value = ref;";
-        $output .= "document.getElementById(type + '_rate').value = rate;";
-        $output .= "document.getElementById(type + '_is_edit').value = '1';";
-        $output .= "document.getElementById(type + '_submit').value = '" . _("Update Rate") . "';";
-        $output .= "document.getElementById(type + '_rate').focus();";
-        $output .= "}";
+        $output .= "<script src='assets/rate-section.js'></script>";
+        $output .= "<script>var existingRates_{$type} = $existingRatesJson;";
+        $output .= "function setRateFromSelect(type, value) { setRateFromSelect_js(type, value, existingRates_{$type}); }";
+        $output .= "function editRate(type, ref, rate) { editRate_js(type, ref, rate); }";
         $output .= "</script>";
 
         if ($totalPages > 1) {
