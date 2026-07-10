@@ -63,12 +63,14 @@ function render_view(): void
     $perPage = (int)($_GET['per_page'] ?? 10);
     $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
 
-    // Show message if any
+// Show message if any
     if (isset($_GET['message'])) {
         display_notification($_GET['message']);
     }
 
-echo "<div class='row'>";
+    $typeDAO = new TypeDAO();
+    
+    echo "<div class='row'>";
      
     // Scenario Multiplier Section (FR-13)
     renderScenarioSection($scenarios, $perPage);
@@ -77,15 +79,14 @@ echo "<div class='row'>";
     renderGlobalSection($manager, $perPage);
     
 // Type Rate Cache display (read-only summary)
-    $typeDAO = new TypeDAO();
-    $allTypes = $typeDAO->getAllTypes();
-    echo RateSectionRenderer::renderTypeCache($manager->getAllRates(), $allTypes);
+    $allTypesByName = $typeDAO->getAllTypesByName();
+    echo RateSectionRenderer::renderTypeCache($manager->getAllRates(), $allTypesByName);
     
     // Category Rate Section
     renderCategorySection($manager, $perPage);
     
     // Type Rate Section
-    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? [], $allTypes);
+    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? [], $allTypesByName);
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);

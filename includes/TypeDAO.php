@@ -15,9 +15,9 @@ final class TypeDAO
 {
     /**
      * Get all chart types for type rate configuration.
-     * Returns lowercase name => name mapping for DDL.
+     * Returns id => name mapping for DDL.
      *
-     * @return array<string, string> lowercase name => display name
+     * @return array<int, string> id => name
      */
     public function getAllTypes(): array
     {
@@ -33,8 +33,7 @@ final class TypeDAO
         $types = [];
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $name = $row['name'];
-                $types[strtolower($name)] = $name;
+                $types[(int)$row['id']] = $row['name'];
             }
         } else {
             $error = $db ? (method_exists($db, 'error') ? $db->error : 'no error property') : 'no db connection';
@@ -42,6 +41,22 @@ final class TypeDAO
         }
 
         return $types;
+    }
+
+    /**
+     * Get types indexed by lowercase name for rate lookup.
+     * Used when rates are stored by name but we need name-to-display mapping.
+     *
+     * @return array<string, string> lowercase_name => display_name
+     */
+    public function getAllTypesByName(): array
+    {
+        $types = $this->getAllTypes();
+        $byName = [];
+        foreach ($types as $id => $name) {
+            $byName[strtolower($name)] = $name;
+        }
+        return $byName;
     }
 
     /**

@@ -7,6 +7,8 @@ class RateSectionRenderer
     {
         $rateItems = [];
         foreach ($rates as $ref => $rate) {
+            // ref is the rate key (lowercase name for type/category, or code for GL)
+            // options is key => display_name mapping
             $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $options[$ref] ?? $ref];
         }
         $totalItems = count($rateItems);
@@ -34,7 +36,8 @@ class RateSectionRenderer
             if ($showCodeWithRef) {
                 $output .= "<td>" . htmlspecialchars((string)$row['ref'] . ' - ' . $row['name']) . "</td>";
             } else {
-                $output .= "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
+                // For types: ref is the rate key, name is the display name
+                $output .= "<td>" . htmlspecialchars((string)$row['name']) . "</td>";
             }
             $output .= "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
             $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '{$row['ref']}', {$row['rate']})\">" . _("Edit") . "</button></td>";
@@ -51,12 +54,13 @@ class RateSectionRenderer
         $output .= "<input type='hidden' name='per_page' value='$perPage'>";
         $output .= "<input type='hidden' name='is_edit' id='{$type}_is_edit' value='0'>";
         $output .= "<select name='reference' id='{$type}_ref' class='form-control mb-2' onchange=\"setRateFromSelect('{$type}', this.value)\">";
-        foreach ($options as $id => $name) {
-            if (empty($id)) {
+        foreach ($options as $key => $name) {
+            if (empty($key)) {
                 continue;
             }
-            $selected = isset($rates[$id]) ? ' selected' : '';
-            $output .= "<option value='" . htmlspecialchars((string)$id) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
+            // options is lowercase_name => display_name, rates are keyed by lowercase_name
+            $selected = isset($rates[$key]) ? ' selected' : '';
+            $output .= "<option value='" . htmlspecialchars((string)$name) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
         }
         $output .= "</select>";
         $output .= "<input type='number' step='any' name='rate' id='{$type}_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
@@ -84,16 +88,21 @@ class RateSectionRenderer
 
     public static function renderTypeCache(array $rates, array $allTypes = []): string
     {
-        $output = "<div class='col-md-6'>";
-        $output .= "<div class='card mb-3' style='border: 1px solid #ddd;'>";
-        $output .= "<div class='card-header'>" . _("Type Rate Cache") . "</div>";
-        $output .= "<div class='card-body'>";
-        $output .= "<table class='table table-sm table-bordered' style='font-size: 0.85em;'>";
+        $output = "<button type='button' class='btn btn-sm btn-info mb-2' data-toggle='modal' data-target='#typeRateCacheModal'>" . _("View Type Rate Cache") . "</button>";
+        
+        $output .= "<div class='modal fade' id='typeRateCacheModal' tabindex='-1' role='dialog'>";
+        $output .= "<div class='modal-dialog modal-lg' role='document'>";
+        $output .= "<div class='modal-content'>";
+        $output .= "<div class='modal-header'><h5 class='modal-title'>" . _("Type Rate Cache") . "</h5>";
+        $output .= "<button type='button' class='close' data-dismiss='modal'>&times;</button></div>";
+        $output .= "<div class='modal-body'>";
+        $output .= "<table class='table table-sm table-bordered'>";
         $output .= "<thead><tr><th>" . _("Type Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
         $output .= "<tbody>";
         
         $typeRates = $rates['type'] ?? [];
         if (!empty($allTypes)) {
+            // allTypes is lowercase_name => display_name, typeRates is lowercase_name => rate
             foreach ($allTypes as $key => $name) {
                 $rate = $typeRates[$key] ?? '—';
                 $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
@@ -107,7 +116,7 @@ class RateSectionRenderer
         }
         
         $output .= "</tbody></table>";
-        $output .= "</div></div></div>";
+        $output .= "</div></div></div></div>";
         return $output;
     }
 }
