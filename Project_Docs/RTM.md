@@ -33,7 +33,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | BR-02 | Apply configurable inflation factors to expense budgets | `InflationFactorManager` | TBD | UAT-02 | Implemented |
 | BR-03 | Support flexible time periods for budget creation | `quickbudget.php` start_month selector | TBD | UAT-01, UAT-02 | Implemented |
 | BR-04 | Integrate with native FA budget reporting | `0_ksf_quickbudget_budget` table | TBD | UAT-05 | Partial |
-| BR-05 | Inflation factors follow 4-level hierarchy: Global → Group → Category → GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
+| BR-05 | Inflation factors follow 4-level hierarchy: Global → Type → Category → GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
 | BR-06 | Prompt user on partial-year recreation for completed months | `handle_create()` prompt flag | TBD | UAT-02 | Implemented |
 | BR-07 | Budget generation uses native FA budget tables | `saveToFABudget()` to custom tables | TBD | UAT-01 | Implemented |
 | BR-08 | Optional approval workflow configurable per company | `quickbudget_approve.php` | TBD | UAT-06 | Implemented |
@@ -49,7 +49,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 |--------|-------------|----------------|-----------|----------|--------|
 | FR-01 | Configure global inflation factor as default percentage | `FactorTypes::GLOBAL` + `InflationFactorManager.php::setGlobalRate()` | `tests/unit/InflationFactorManagerTest.php::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
 | FR-02 | Configure category-level inflation factors (Assets, Income, COGS, Expenses) | `CategoryDAO::getAllCategories()` queries chart_class + `FactorTypes::CATEGORY` | `tests/unit/InflationFactorManagerTest.php::testGetRateReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
-| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `GroupDAO::getAllGroups()` queries chart_types + `InflationFactorDTO::TYPE` | `tests/unit/InflationFactorManagerTest.php::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
+| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `GroupDAO::getAllGroups()` queries chart_types + `FactorTypes::TYPE` | `tests/unit/InflationFactorManagerTest.php::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
 | FR-04 | Configure GL-specific inflation factors (chart_master.account_code) | `GLAccountDAO::getAllGLAccounts()` queries chart_master + `FactorTypes::GL` | `tests/unit/InflationFactorManagerTest.php::testSetGLRateStoresGLRate` | UAT-03 | Implemented |
 | FR-05 | Import inflation factors from CSV with GL account, category, and rate columns | `InflationFactorRepository::importFromCsv()` + factor type constants | TBD | UAT-03 | Implemented |
 | FR-06 | Save inflation factor configurations | `InflationFactorRepository::save()` + `FactorTypes` constants | TBD | UAT-03 | Implemented |
