@@ -15,6 +15,9 @@ add_access_extensions();
 
 global $db;
 
+// Debug: log page entry
+$logFile = dirname(__DIR__) . '/logs/debug.log';
+file_put_contents($logFile, date('Y-m-d H:i:s') . " quickbudget_config.php loaded\n", FILE_APPEND);
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
 switch ($page) {
@@ -216,7 +219,16 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
     echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Category") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
+    // DEBUG: Log each rate item
+    foreach ($rateItems as $debugRow) {
+        if (!empty($debugRow['ref'])) {
+            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
+        }
+    }
+    
     $odd = true;
+    // DEBUG
+    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;
@@ -282,6 +294,9 @@ function renderTypeSection(int $perPage, array $typeRates = []): void
     $groupDAO = new GroupDAO();
     $allTypes = $groupDAO->getAllGroups();
     
+    // DEBUG: Log type section entry
+    file_put_contents(dirname(__DIR__) . '/logs/debug.log', date('Y-m-d H:i:s') . " renderTypeSection: allTypes count=" . count($allTypes) . "\n", FILE_APPEND);
+    
     if (empty($allTypes)) {
         echo "<div class='col-md-6'>";
         echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
@@ -346,7 +361,16 @@ echo "<div class='col-md-6'>";
     echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Type") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
+    // DEBUG: Log each rate item
+    foreach ($rateItems as $debugRow) {
+        if (!empty($debugRow['ref'])) {
+            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
+        }
+    }
+    
     $odd = true;
+    // DEBUG
+    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;
@@ -439,7 +463,16 @@ function renderGLSection(int $perPage, array $glRates = []): void
     echo "<table class='table table-sm table-striped border'>";
     echo "<thead><tr><th>" . _("GL Account") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
+    // DEBUG: Log each rate item
+    foreach ($rateItems as $debugRow) {
+        if (!empty($debugRow['ref'])) {
+            error_log("Rate item: ref=" . $debugRow['ref'] . " rate=" . $debugRow['rate']);
+        }
+    }
+    
     $odd = true;
+    // DEBUG
+    error_log("renderTypeSection: displayItems count=" . count($displayItems));
     foreach ($displayItems as $row) {
         if (empty($row['ref'])) {
             continue;

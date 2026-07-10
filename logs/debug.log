@@ -1,2 +1,6 @@
 2026-07-08 04:59:23 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM 0_ksf_quickbudget_factors
             WHERE factor_type IS NOT NULL
+2026-07-10 15:43:14 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL
+2026-07-10 15:46:13 loadFromDB: sql=SELECT factor_type, reference_id, rate FROM ksf_quickbudget_factors
+            WHERE factor_type IS NOT NULL

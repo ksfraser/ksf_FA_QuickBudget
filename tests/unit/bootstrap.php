@@ -33,6 +33,16 @@ if (!function_exists('db_query')) {
     }
 }
 
+if (!function_exists('db_num_rows')) {
+    function db_num_rows($result): int {
+        if ($result instanceof MockDbResult) {
+            // For SELECT queries, estimate if there would be rows
+            return 1; // Assume at least one row for testing
+        }
+        return 0;
+    }
+}
+
 if (!function_exists('db_fetch_assoc')) {
     function db_fetch_assoc($result) {
         return $result->fetch();
@@ -66,6 +76,14 @@ class MockDbResult {
             return false;
         }
 
+        // Handle ksf_quickbudget_factors queries for inflation factors
+        if (stripos($this->sql, 'ksf_quickbudget_factors') !== false) {
+            if ($this->fetchCount === 1) {
+                return ['factor_type' => 'type', 'reference_id' => 'utilities', 'rate' => '1.0400'];
+            }
+            return false;
+        }
+
         // Handle account details query (chart_master join)
         if (stripos($this->sql, 'chart_master') !== false) {
             return ['type_id' => '1', 'type_name' => 'Utilities', 'class_name' => 'expenses'];
@@ -73,7 +91,10 @@ class MockDbResult {
 
         // Handle chart_types queries for type name/parent/class
         if (stripos($this->sql, 'chart_types') !== false) {
-            return ['id' => '1', 'name' => 'Utilities', 'class_id' => '2', 'ctype' => '1'];
+            if ($this->fetchCount === 1) {
+                return ['id' => '1', 'name' => 'Utilities', 'class_id' => '2'];
+            }
+            return false;
         }
 
         // Handle chart_class queries
