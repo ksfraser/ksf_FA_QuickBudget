@@ -36,9 +36,6 @@ class InflationFactorManager
 
         $sql = "SELECT factor_type, reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type IS NOT NULL";
         
-        $logFile = dirname(__DIR__) . '/logs/debug.log';
-        file_put_contents($logFile, date('Y-m-d H:i:s') . " loadFromDB: sql=" . $sql . "\n", FILE_APPEND);
-        
         $result = db_query($sql);
         
         if (!$result) {
@@ -48,6 +45,7 @@ class InflationFactorManager
         
         $rows = db_num_rows($result);
         error_log("loadFromDB: found {$rows} rows");
+        error_log("loadFromDB: type=" . (db_num_rows($result) > 0 ? "has data" : "empty"));
 
         while ($row = db_fetch_assoc($result)) {
             $rate = (float)$row['rate'];
