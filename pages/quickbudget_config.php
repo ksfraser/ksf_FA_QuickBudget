@@ -291,43 +291,20 @@ function renderCategorySection(InflationFactorManager $manager, int $perPage): v
 
 function renderTypeSection(int $perPage, array $typeRates = []): void
 {
-    $groupDAO = new TypeDAO();
-    $allTypes = $groupDAO->getAllGroups();
+    $typeDAO = new TypeDAO();
+    $allTypes = $typeDAO->getAllTypes();
     
     if (empty($allTypes)) {
         echo "<div class='col-md-6'>";
         echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
         echo "<div class='card-header'>" . _("Type Rates") . "</div>";
         echo "<div class='card-body'>";
-        echo "<p class='text-warning'>DEBUG: allTypes empty, SQL error in log";
+        echo "<p class='text-warning'>DEBUG: allTypes empty - check DB connection";
         echo "</div></div></div>";
         return;
     }
     
-    // Get existing type rates (prefer passed-in rates, fallback to session)
     $allRates = $typeRates ?: ($_SESSION['ksf_qb_factors']['type'] ?? []);
-    
-    // Debug: show what we have
-    $outputDebug = "DEBUG: rates=" . count($allRates) . ", types=" . count($allTypes);
-    foreach ($allRates as $ref => $rate) {
-        $outputDebug .= " | ref=$ref rate=$rate";
-    }
-    
-    // DB verification - check if type rate exists in DB
-    $dbRates = [];
-    $verifySQL = "SELECT reference_id, rate FROM " . TB_PREF . "ksf_quickbudget_factors WHERE factor_type='type'  ";
-    $logFile = dirname(__DIR__) . '/logs/debug.log';
-    file_put_contents($logFile, date('Y-m-d H:i:s') . " verifySQL: " . $verifySQL . "\n", FILE_APPEND);
-
-    $verifyResult = db_query($verifySQL);
-    if ($verifyResult) {
-        while ($row = db_fetch_assoc($verifyResult)) {
-            $dbRates[(string)$row['reference_id']] = (float)$row['rate'];
-        }
-    }
-    $outputDebug .= " | DB has " . count($dbRates) . " type rates";
-    
-    // Paginate rates
     $rateItems = [];
     foreach ($allRates as $ref => $rate) {
         $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $ref];
@@ -338,23 +315,22 @@ function renderTypeSection(int $perPage, array $typeRates = []): void
     $offset = ($pageNum - 1) * $perPage;
     $displayItems = array_slice($rateItems, $offset, $perPage);
     
-echo "<div class='col-md-6'>";
+    echo "<div class='col-md-6'>";
     echo "<div class='card mb-3' style='border: 1px solid #ddd;'>";
     echo "<div class='card-header'>" . _("Type Rates") . "</div>";
     echo "<div class='card-body' style='border: 1px solid #ddd; margin-top: 10px;'>";
-    echo "<p class='text-muted small'>$outputDebug</p>";
     
-    // Pagination for groups
+    // Pagination for types
     if ($totalPages > 1) {
         echo "<div class='pagination'>";
         for ($i = 1; $i <= $totalPages; $i++) {
             $active = $i === $pageNum ? ' font-weight-bold' : '';
-            echo "<a href='quickbudget_config.php?per_page=$perPage&type_page=$i' class='mx-1$active'>$i</a>";
+            echo "<a href='?type_page=$i&per_page=$perPage' class='$active'>$i</a> ";
         }
         echo "</div>";
     }
     
-    // Existing rates table (before form)
+    // Existing rates table
     echo "<table class='table table-sm table-striped border' border=1>";
     echo "<thead><tr><th>" . _("Type") . "</th><th>" . _("Rate") . "</th><th>" . _("Actions") . "</th></tr></thead>";
     echo "<tbody>";
@@ -364,63 +340,32 @@ echo "<div class='col-md-6'>";
             continue;
         }
         $odd = !$odd;
-        echo "<tr" . ($odd ? '' : ' class=\"tr_alt\"') . ">";
-        echo "<td>" . htmlspecialchars($row['name'] . ' (' . $row['ref'] . ')') . "</td>";
+        echo "<tr" . ($odd ? '' : ' class="tr_alt"') . ">";
+        echo "<td>" . htmlspecialchars((string)$row['ref']) . "</td>";
         echo "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
         echo "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editTypeRate('" . $row['ref'] . "', " . $row['rate'] . ")\">" . _("Edit") . "</button></td>";
         echo "</tr>";
     }
     if (empty($displayItems)) {
-        echo "<tr><td colspan='3' class='text-center'>" . _("No type rates defined") . "</td></tr>";
+        echo "<tr><td colspan='3' class='text-center'>" . _("No type rates configured") . "</td></tr>";
     }
-    echo "</tbody>";
-    echo "</table>";
+    echo "</tbody></table>";
     
     // Form for new/edit (after table)
-    
     echo "<form method='post' action='quickbudget_config.php?action=save' id='type-form' class='p-2 border rounded'>";
     echo "<input type='hidden' name='type' value='type'>";
     echo "<input type='hidden' name='per_page' value='$perPage'>";
     echo "<input type='hidden' name='is_edit' id='type_is_edit' value='0'>";
     echo "<select name='reference' id='type_ref' class='form-control mb-2' onchange=\"setTypeRateFromSelect(this.value)\">";
     foreach ($allTypes as $id => $name) {
-        if (empty($id)) {
-            continue;
-        }
-        $selected = isset($allRates[strtolower($name)]) ? ' selected' : '';
-        echo "<option value='" . htmlspecialchars($name) . "'$selected>" . htmlspecialchars((string)$name . ' (' . $id . ')') . "</option>";
+        $selected = isset($allRates[$name]) ? ' selected' : '';
+        echo "<option value='" . htmlspecialchars($name) . "'$selected>" . htmlspecialchars($name) . "</option>";
     }
     echo "</select>";
     echo "<input type='number' step='any' name='rate' id='type_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
     echo "<input type='submit' id='type_submit' class='btn btn-primary' value='" . _("Save Type Rate") . "'>";
     echo "</form>";
-    
-    echo "<script>
-    function editTypeRate(ref, rate) {
-        document.getElementById('type_ref').value = ref;
-        document.getElementById('type_rate').value = rate;
-        document.getElementById('type_is_edit').value = '1';
-        document.getElementById('type_submit').value = '" . _("Update Rate") . "';
-        document.getElementById('type_rate').focus();
-    }
-    function setTypeRateFromSelect(value) {
-        var rateInput = document.getElementById('type_rate');
-        var existingRates = " . json_encode($allRates) . ";
-        if (existingRates[value]) {
-            rateInput.value = existingRates[value];
-            document.getElementById('type_is_edit').value = '1';
-            document.getElementById('type_submit').value = '" . _("Update Rate") . "';
-        } else {
-            rateInput.value = '';
-            document.getElementById('type_is_edit').value = '0';
-            document.getElementById('type_submit').value = '" . _("Save Type Rate") . "';
-        }
-    }
-    </script>";
-    
-    echo "</div>";
-    echo "</div>";
-    echo "</div>";
+    echo "</div></div></div>";
 }
 
 function renderGLSection(int $perPage, array $glRates = []): void
