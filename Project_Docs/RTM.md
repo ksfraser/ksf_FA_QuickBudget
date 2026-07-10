@@ -49,7 +49,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 |--------|-------------|----------------|-----------|----------|--------|
 | FR-01 | Configure global inflation factor as default percentage | `FactorTypes::GLOBAL` + `InflationFactorManager.php::setGlobalRate()` | `tests/unit/InflationFactorManagerTest.php::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
 | FR-02 | Configure category-level inflation factors (Assets, Income, COGS, Expenses) | `CategoryDAO::getAllCategories()` queries chart_class + `FactorTypes::CATEGORY` | `tests/unit/InflationFactorManagerTest.php::testGetRateReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
-| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `GroupDAO::getAllGroups()` queries chart_types + `FactorTypes::TYPE` | `tests/unit/InflationFactorManagerTest.php::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
+| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `TypeDAO::getAllTypes()` queries chart_types + `FactorTypes::TYPE` | `tests/unit/InflationFactorManagerTest.php::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
 | FR-04 | Configure GL-specific inflation factors (chart_master.account_code) | `GLAccountDAO::getAllGLAccounts()` queries chart_master + `FactorTypes::GL` | `tests/unit/InflationFactorManagerTest.php::testSetGLRateStoresGLRate` | UAT-03 | Implemented |
 | FR-05 | Import inflation factors from CSV with GL account, category, and rate columns | `InflationFactorRepository::importFromCsv()` + factor type constants | TBD | UAT-03 | Implemented |
 | FR-06 | Save inflation factor configurations | `InflationFactorRepository::save()` + `FactorTypes` constants | TBD | UAT-03 | Implemented |
