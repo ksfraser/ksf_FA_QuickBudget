@@ -7,7 +7,7 @@ class RateSectionRenderer
     {
         $rateItems = [];
         foreach ($rates as $ref => $rate) {
-            // ref is the rate key (lowercase name for type/category, or code for GL)
+            // ref is the rate key (int for type, string for category/GL)
             // options is key => display_name mapping
             $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $options[$ref] ?? $ref];
         }
@@ -33,14 +33,9 @@ class RateSectionRenderer
             }
             $odd = !$odd;
             $output .= "<tr" . ($odd ? '' : " class=\"tr_alt\"") . ">";
-            if ($showCodeWithRef) {
-                $output .= "<td>" . htmlspecialchars((string)$row['ref'] . ' - ' . $row['name']) . "</td>";
-            } else {
-                $output .= "<td>" . htmlspecialchars((string)$row['name']) . "</td>";
-            }
+            $output .= "<td>" . htmlspecialchars((string)$row['name']) . "</td>";
             $output .= "<td>" . htmlspecialchars((string)$row['rate']) . "</td>";
-            // Pass the name (not the key) to edit, since form uses names
-            $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '{$row['name']}', {$row['rate']})\">" . _("Edit") . "</button></td>";
+            $output .= "<td><button type='button' class='btn btn-sm btn-secondary' onclick=\"editRate('{$type}', '" . htmlspecialchars((string)$row['ref']) . "', {$row['rate']})\">" . _("Edit") . "</button></td>";
             $output .= "</tr>";
         }
         if (empty($displayItems)) {
@@ -58,16 +53,16 @@ class RateSectionRenderer
             if (empty($key)) {
                 continue;
             }
-            // options is lowercase_name => display_name, rates are keyed by lowercase_name
+            // options is int => display_name for types, rates are keyed by int
             $selected = isset($rates[$key]) ? ' selected' : '';
-            $output .= "<option value='" . htmlspecialchars((string)$name) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
+            $output .= "<option value='" . htmlspecialchars((string)$key) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
         }
         $output .= "</select>";
         $output .= "<input type='number' step='any' name='rate' id='{$type}_rate' value='' class='form-control mb-2' placeholder='Rate (e.g., 1.03 for 3%)'>";
         $output .= "<input type='submit' id='{$type}_submit' class='btn btn-primary' value='" . _("Save {$label}") . "'>";
         $output .= "</form>";
 
-        $output .= "<script src='assets/rate-section.js'></script>";
+        $output .= "<script src='../assets/rate-section.js'></script>";
         $output .= "<script>var existingRates_{$type} = $existingRatesJson;";
         $output .= "function setRateFromSelect(type, value) { setRateFromSelect_js(type, value, existingRates_{$type}); }";
         $output .= "function editRate(type, ref, rate) { editRate_js(type, ref, rate); }";
@@ -100,15 +95,13 @@ class RateSectionRenderer
         $output .= "<thead><tr><th>" . _("Type Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
         $output .= "<tbody>";
         
-        $typeRates = $rates['type'] ?? [];
+        $resolvedRates = $rates['resolved_types'] ?? [];
+        
         if (!empty($allTypes)) {
-            // allTypes is lowercase_name => display_name, typeRates is already keyed by lowercase_name
-            foreach ($allTypes as $key => $name) {
-                $rate = $typeRates[$key] ?? '—';
-                $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
-            }
-        } elseif (!empty($typeRates)) {
-            foreach ($typeRates as $name => $rate) {
+            // allTypes is id => display_name (from TypeDAO::getAllTypes())
+            // Show resolved rates (parent chain) keyed by lowercase name, map to display name
+            foreach ($allTypes as $typeId => $name) {
+                $rate = $resolvedRates[strtolower($name)] ?? '—';
                 $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
             }
         } else {

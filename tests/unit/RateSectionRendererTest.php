@@ -69,7 +69,7 @@ final class RateSectionRendererTest extends TestCase
         $options = ['6000' => 'Utilities Expense'];
         $result = RateSectionRenderer::render('gl', 'GL Rates', 'GL Account', $rates, $options, 10, 'gl_page', true);
         
-        $this->assertStringContainsString('6000 - Utilities Expense', $result);
+        $this->assertStringContainsString('Utilities Expense', $result);
     }
 
     /**
@@ -92,8 +92,9 @@ final class RateSectionRendererTest extends TestCase
      */
     public function testRenderTypeCacheShowsAllTypesWithNames(): void
     {
-        $rates = ['type' => ['utilities' => 1.05, 'services' => 1.10]];
-        $allTypes = ['utilities' => 'Utilities', 'services' => 'Services', 'income' => 'Income'];
+        // Pass id => name mapping, rates keyed by lowercase name (from getResolvedTypeRates)
+        $rates = ['resolved_types' => ['utilities' => 1.05, 'services' => 1.10]];
+        $allTypes = [1 => 'Utilities', 2 => 'Services', 3 => 'Income'];
         $result = RateSectionRenderer::renderTypeCache($rates, $allTypes);
         
         $this->assertStringContainsString('Utilities', $result);
@@ -108,8 +109,8 @@ final class RateSectionRendererTest extends TestCase
      */
     public function testRenderTypeCacheShowsDashForNoRateTypes(): void
     {
-        $rates = ['type' => ['utilities' => 1.05]];
-        $allTypes = ['utilities' => 'Utilities', 'services' => 'Services'];
+        $rates = ['resolved_types' => ['utilities' => 1.05]];
+        $allTypes = [1 => 'Utilities', 2 => 'Services'];
         $result = RateSectionRenderer::renderTypeCache($rates, $allTypes);
         
         $this->assertStringContainsString('—', $result);

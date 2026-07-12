@@ -75,19 +75,23 @@ class MockDbResult {
             return false;
         }
 
-        // Handle account details query (chart_master join)
+        // Handle account details query (chart_master join) - returns class_id (ctype) for category lookup
         if (stripos($this->sql, 'chart_master') !== false) {
-            return ['type_id' => '1', 'type_name' => 'Utilities', 'class_name' => 'expenses'];
+            return ['type_id' => 1, 'type_name' => 'Utilities', 'parent_id' => 2, 'class_id' => 1];
         }
 
-        // Handle chart_types queries for type name/parent/class
+        // Handle chart_types queries for type name/parent/class (supports multiple types)
         if (stripos($this->sql, 'chart_types') !== false) {
-            return ['id' => '1', 'name' => 'Utilities', 'class_id' => '2', 'ctype' => '1'];
+            // Return at least one type, then stop
+            if ($this->fetchCount === 1) {
+                return ['id' => 1, 'name' => 'Utilities', 'class_id' => 2, 'ctype' => 1];
+            }
+            return false;
         }
 
         // Handle chart_class queries
         if (stripos($this->sql, 'chart_class') !== false) {
-            return ['cid' => '1', 'class_name' => 'expenses'];
+            return ['cid' => 1, 'class_name' => 'expenses'];
         }
 
         return false;

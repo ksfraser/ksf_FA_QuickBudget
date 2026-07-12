@@ -36,24 +36,24 @@ final class InflationFactorManagerTest extends TestCase
     public function testGetRateReturnsCategoryRateWhenNoGLSpecific(): void
     {
         $this->manager->setGlobalRate(1.0200);
-        $this->manager->setCategoryRate('Expenses', 1.0500);
+        $this->manager->setCategoryRate(1, 1.0500);
 
         $this->assertEquals(1.0500, $this->manager->getRateForAccount('6000'));
     }
 
     /**
      * FR-03: Configure type-level inflation factors
-     * Tests that setTypeRate stores rates correctly.
-     * @testdox setTypeRate stores type rate for retrieval
+     * Tests that setTypeRate stores rates correctly by ID.
+     * @testdox setTypeRate stores type rate by ID for retrieval
      */
     public function testSetTypeRateStoresTypeRate(): void
     {
         $this->manager->setGlobalRate(1.0200);
-        $this->manager->setTypeRate('Utilities', 1.0400);
+        $this->manager->setTypeRate(1, 1.0400);
 
         $all = $this->manager->getAllRates();
         $this->assertArrayHasKey('type', $all);
-        $this->assertArrayHasKey('utilities', $all['type']);
+        $this->assertArrayHasKey(1, $all['type']);
     }
 
     /**
@@ -63,8 +63,8 @@ final class InflationFactorManagerTest extends TestCase
     public function testGLRateOverridesTypeAndCategory(): void
     {
         $this->manager->setGlobalRate(1.0200);
-        $this->manager->setTypeRate('Utilities', 1.0400);
-        $this->manager->setCategoryRate('Expenses', 1.0500);
+        $this->manager->setTypeRate(1, 1.0400);
+        $this->manager->setCategoryRate(1, 1.0500);
         $this->manager->setGLRate('6000', 1.1000);
 
         $this->assertEquals(1.1000, $this->manager->getRateForAccount('6000'));

@@ -1,22 +1,20 @@
 -- ksf_FA_QuickBudget update.sql
--- Migration: enum to varchar, drop company column
+-- Migration: migrate reference_id from names to IDs for type/category rates
 
--- Convert ENUM to VARCHAR for flexibility  
-ALTER TABLE `0_ksf_quickbudget_factors` 
-    MODIFY COLUMN `factor_type` VARCHAR(32) NOT NULL DEFAULT 'global';
+-- Add type_id column to temporarily hold migrated IDs
+ALTER TABLE `0_ksf_quickbudget_factors` ADD COLUMN `type_id` INT(11) DEFAULT NULL;
 
--- Drop company column (FA uses TB_PREF for multi-company isolation)
-ALTER TABLE `0_ksf_quickbudget_factors` DROP COLUMN IF EXISTS `company`;
-
--- Recreate unique key without company
-ALTER TABLE `0_ksf_quickbudget_factors` DROP INDEX IF EXISTS `unique_factor`;
-ALTER TABLE `0_ksf_quickbudget_factors` ADD UNIQUE KEY `unique_factor` (`factor_type`,`reference_id`);
-
--- Add type_id column for type rates (store chart_types.id instead of name)
-ALTER TABLE `0_ksf_quickbudget_factors` ADD COLUMN `type_id` INT(11) DEFAULT NULL AFTER `reference_id`;
-
--- Migrate existing type rates to use type_id (requires matching chart_types.name)
+-- Migrate existing type rates: store chart_types.id in type_id
 UPDATE `0_ksf_quickbudget_factors` tf
 JOIN `0_chart_types` ct ON tf.reference_id = ct.name
 SET tf.type_id = ct.id
 WHERE tf.factor_type = 'type';
+
+-- Migrate existing category rates: store chart_class.cid in type_id
+UPDATE `0_ksf_quickbudget_factors` tf
+JOIN `0_chart_class` cc ON tf.reference_id = cc.class_name
+SET tf.type_id = cc.cid
+WHERE tf.factor_type = 'category';
+
+-- Drop the temporary type_id column (reference_id now holds IDs)
+ALTER TABLE `0_ksf_quickbudget_factors` DROP COLUMN `type_id`;

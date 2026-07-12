@@ -69,29 +69,29 @@ function render_view(): void
     }
 
     $typeDAO = new TypeDAO();
-    
+      
     echo "<div class='row'>";
-     
+      
     // Scenario Multiplier Section (FR-13)
     renderScenarioSection($scenarios, $perPage);
 
     // Global Rate Section
     renderGlobalSection($manager, $perPage);
-    
-// Type Rate Cache display (read-only summary)
-    $allTypesByName = $typeDAO->getAllTypesByName();
-    echo RateSectionRenderer::renderTypeCache($manager->getAllRates(), $allTypesByName);
-    
+
     // Category Rate Section
     renderCategorySection($manager, $perPage);
-    
+
     // Type Rate Section
-    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? [], $allTypesByName);
+    $allTypes = $typeDAO->getAllTypes(); // Returns id => name
+    renderTypeSection($perPage, $manager->getAllRates()['type'] ?? [], $allTypes);
 
     // GL-Specific Rate Section
     renderGLSection($perPage, $manager->getAllRates()['gl'] ?? []);
     
     echo "</div>";
+
+    // Type Rate Cache modal (rendered at end for Bootstrap)
+    echo RateSectionRenderer::renderTypeCache($manager->getAllRates(), $allTypes);
 
     // Per page selector
     echo "<div class='mt-3'>" . _("Per page:") . " ";
@@ -220,16 +220,13 @@ function handle_save(): void
             $factor = new InflationFactorDTO($type, '', $rate);
             break;
         case 'category':
-            $manager->setCategoryRate($reference, $rate);
-            $factor = new InflationFactorDTO($type, $reference, $rate);
+            $manager->setCategoryRate((int)$reference, $rate);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate);
             break;
-case 'type':
-             $typeDAO = new TypeDAO();
-             // Convert name to ID for stable storage
-             $typeId = $typeDAO->getTypeIdByName($reference);
-             $manager->setTypeRate($reference, $rate);
-             $factor = new InflationFactorDTO($type, (string)$typeId, $rate);
-             break;
+        case 'type':
+            $manager->setTypeRate((int)$reference, $rate);
+            $factor = new InflationFactorDTO($type, (string)$reference, $rate);
+            break;
         case 'gl':
             $manager->setGLRate($reference, $rate);
             $factor = new InflationFactorDTO($type, (string)$reference, $rate);

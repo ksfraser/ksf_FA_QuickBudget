@@ -74,13 +74,13 @@ final class CategoryDAO
     }
 
     /**
-     * Get all available category names for UI dropdowns.
-     * Returns unique class names from chart_class.
+     * Get all available category IDs and names for UI dropdowns.
+     * Returns cid => class_name mapping for form selects.
      *
-     * @return array<string> Unique lowercased class names
+     * @return array<string, string> cid => class_name
      */
     public function getAllCategories(): array
     {
-        return array_values($this->getClassMap());
+        return $this->getClassMap();
     }
 }
