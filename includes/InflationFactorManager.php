@@ -141,6 +141,7 @@ class InflationFactorManager
 
     /**
      * Get resolved rates for all types (including inherited from parent chain).
+     * Uses global rate as fallback when no type/category rate is found.
      *
      * @return array<string, float> lowercase_name => rate
      */
@@ -158,13 +159,12 @@ class InflationFactorManager
             }
         }
 
-        // Resolve rate for each type
+        // Resolve rate for each type (global rate is fallback)
         foreach ($typeMap as $typeId => $lowerName) {
             $checked = []; // Reset checked array for each type
             $rate = $this->getResolvedRateForType($typeId, $checked);
-            if ($rate !== null) {
-                $resolved[$lowerName] = $rate;
-            }
+            // Always add - use global as fallback
+            $resolved[$lowerName] = $rate ?? $this->globalRate;
         }
 
         return $resolved;
@@ -234,7 +234,7 @@ class InflationFactorManager
 
     /**
      * Get effective rate for a GL account.
-     * Resolves hierarchy: GL → Type → Parent → Category → Global.
+     * Resolves hierarchy: GL → Type (incl. parent) → Category → Global.
      *
      * @param string $glAccount GL account code
      * @return float Effective inflation rate
@@ -249,20 +249,12 @@ class InflationFactorManager
         // Get account's type, parent, and class for resolution
         $accountDetails = $this->getAccountDetails($glAccount);
 
-        // Type-level override (chart_types.id)
-        if ($accountDetails && $this->typeRates && $accountDetails['type_id']) {
-            $typeId = (int)$accountDetails['type_id'];
-            if (isset($this->typeRates[$typeId])) {
-                return $this->typeRates[$typeId];
-            }
-        }
-
-        // Parent-level override (chart_types.class_id recursion)
-        if ($accountDetails && $this->typeRates && $accountDetails['parent_id']) {
+        // Type-level override (chart_types.id) - includes parent chain resolution
+        if ($accountDetails && $accountDetails['type_id']) {
             $checked = [];
-            $parentRate = $this->getResolvedRateForType($accountDetails['parent_id'], $checked);
-            if ($parentRate !== null) {
-                return $parentRate;
+            $typeRate = $this->getResolvedRateForType($accountDetails['type_id'], $checked);
+            if ($typeRate !== null) {
+                return $typeRate;
             }
         }
 
