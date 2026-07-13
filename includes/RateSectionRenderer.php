@@ -96,13 +96,13 @@ class RateSectionRenderer
         $output .= "<tbody>";
         
         $resolvedRates = $rates['resolved_types'] ?? [];
+        $globalRate = $rates['global'] ?? 1.0;
         
         if (!empty($allTypes)) {
-            // allTypes is id => display_name (from TypeDAO::getAllTypes())
-            // Show resolved rates (parent chain) keyed by lowercase name, map to display name
             foreach ($allTypes as $typeId => $name) {
-                $rate = $resolvedRates[strtolower($name)] ?? '—';
-                $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
+                $rate = $resolvedRates[strtolower($name)] ?? $globalRate;
+                $rateDisplay = $rate === $globalRate ? number_format($rate, 4) : $rate;
+                $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rateDisplay) . "</td></tr>";
             }
         } else {
             $output .= "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
