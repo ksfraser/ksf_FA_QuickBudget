@@ -86,12 +86,16 @@ function render_view(): void
         echo "<option value='$m'$selected>" . date('F', mktime(0, 0, 0, $m, 1)) . "</option>";
     }
     echo "</select></td>";
-    echo "<td><input type='submit' class='btn btn-primary' value='" . _("Export CSV") . "'></td>";
+    echo "<td><button type='button' id='view-btn' class='btn btn-primary'>" . _("View Comparison") . "</button>";
+    echo "<button type='submit' class='btn btn-secondary'>" . _("Export CSV") . "</button></td>";
     echo "</tr>";
     echo "</table>";
     echo "</form>";
 
     echo "<div id='comparison-results'></div>";
+
+    echo "<script src='../assets/comparison.js'></script>";
+    echo "<script>initComparison();</script>";
 
     echo "</div>";
 
@@ -147,9 +151,9 @@ function handle_export(): void
     global $db;
 
     // FR-26: Export comparison report to CSV with variance
-    $year = (int)($_GET['year'] ?? date('Y'));
-    $startMonth = (int)($_GET['start_month'] ?? 1);
-    $endMonth = (int)($_GET['end_month'] ?? 12);
+    $year = (int)($_POST['year'] ?? $_GET['year'] ?? date('Y'));
+    $startMonth = (int)($_POST['start_month'] ?? $_GET['start_month'] ?? 1);
+    $endMonth = (int)($_POST['end_month'] ?? $_GET['end_month'] ?? 12);
 
     $sql = "SELECT bt.account as gl_account, 
             SUM(bt.amount) as budget_total,
