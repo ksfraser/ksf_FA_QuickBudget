@@ -58,6 +58,10 @@ class MockDbResult {
         $this->sql = $sql ?? '';
     }
 
+    public function reset() {
+        $this->fetchCount = 0;
+    }
+
     public function fetch() {
         $this->fetchCount++;
         // Handle gl_trans queries for account list (getGLAccountsWithActuals)
@@ -85,7 +89,7 @@ class MockDbResult {
         if (stripos($this->sql, 'chart_types') !== false) {
             // Return at least one type, then stop
             if ($this->fetchCount === 1) {
-                return ['id' => '1', 'name' => 'Utilities', 'class_id' => '2', 'parent' => ''];
+                return ['id' => '1', 'name' => 'Utilities', 'class_id' => '1', 'parent' => ''];
             }
             return false;
         }

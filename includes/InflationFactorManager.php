@@ -15,6 +15,9 @@ require_once __DIR__ . '/CategoryDAO.php';
 
 class InflationFactorManager
 {
+    /** @var string Cache file path for resolved type rates */
+    private $cacheFile;
+
     /** @var float Default rate (1.0 = no inflation means 0% inflation) */
     private $globalRate = 1.0;
 
@@ -31,10 +34,18 @@ class InflationFactorManager
     private $resolvedTypeCache = [];
 
     /**
-     * Load rates from database.
-     *
-     * @return void
+     * Constructor - initializes cache file path.
      */
+    public function __construct()
+    {
+        $this->cacheFile = dirname(__DIR__) . '/cache/resolved_type_rates.cache';
+    }
+
+/**
+      * Load rates from database.
+      *
+      * @return void
+      */
     public function loadFromDB(): void
     {
         global $db;
@@ -76,16 +87,94 @@ class InflationFactorManager
             }
         }
     }
-    
+
     /**
-     * Set the global default inflation rate.
-     *
-     * @param float $rate Rate as percentage (e.g., 3.5 for 3.5%)
-     * @return void
-     */
+      * Load resolved type rates from cache file.
+      * Returns null if cache is corrupt or missing - caller should rebuild.
+      *
+      * @return array<string, float>|null
+      */
+    private function loadResolvedTypeCache(): ?array
+    {
+        if (!file_exists($this->cacheFile)) {
+            return null;
+        }
+
+        $content = file_get_contents($this->cacheFile);
+        if ($content === false) {
+            return null;
+        }
+
+        $cached = json_decode($content, true);
+        if (!is_array($cached)) {
+            return null;
+        }
+
+        return $cached;
+    }
+
+    /**
+      * Save resolved type rates to cache file.
+      *
+      * @param array<string, float> $resolved Rates to cache
+      * @return void
+      */
+    private function saveResolvedTypeCache(array $resolved): void
+    {
+        $json = json_encode($resolved);
+        if ($json !== false) {
+            file_put_contents($this->cacheFile, $json);
+        }
+    }
+
+    /**
+      * Invalidate the resolved type cache (call after saving rates).
+      *
+      * @return void
+      */
+    public function invalidateResolvedTypeCache(): void
+    {
+        $this->resolvedTypeCache = [];
+        if (file_exists($this->cacheFile)) {
+            @unlink($this->cacheFile);
+        }
+    }
+    
+/**
+      * Set the global default inflation rate.
+      *
+      * @param float $rate Rate as percentage (e.g., 3.5 for 3.5%)
+      * @return void
+      */
     public function setGlobalRate(float $rate): void
     {
         $this->globalRate = $rate;
+    }
+
+    /**
+      * Load cached rates from session data.
+      *
+      * @param array $sessionRates Rates from $_SESSION['ksf_qb_factors']
+      * @return void
+      */
+    public function loadFromSession(array $sessionRates): void
+    {
+        if (isset($sessionRates['global'])) {
+            $this->globalRate = (float)$sessionRates['global'];
+        }
+        foreach ($sessionRates['type'] ?? [] as $typeId => $rate) {
+            $this->typeRates[(string)$typeId] = (float)$rate;
+        }
+        foreach ($sessionRates['category'] ?? [] as $catId => $rate) {
+            $this->categoryRates[(string)$catId] = (float)$rate;
+        }
+        foreach ($sessionRates['gl'] ?? [] as $glAccount => $rate) {
+            $this->glRates[$glAccount] = (float)$rate;
+        }
+        // Also load resolved types into cache
+        foreach ($sessionRates['resolved_types'] ?? [] as $typeId => $rate) {
+            $this->resolvedTypeCache[(string)$typeId] = (float)$rate;
+        }
     }
 
     /**
@@ -141,93 +230,72 @@ class InflationFactorManager
         ];
     }
 
-    /**
-     * Get resolved rates for all types (including inherited from parent/class).
-     * Type hierarchy: Type → Parent Type → Class → Global.
-     *
-     * @return array<string, float> type_id => rate
-     */
+/**
+      * Get resolved rates for all types (including inherited from parent/class).
+      * Type hierarchy: Type → Parent Type → Class → Global.
+      * Uses cached file if available, rebuilds if missing or corrupt.
+      *
+      * @return array<string, float> type_id => rate
+      */
     private function getResolvedTypeRates(): array
     {
         global $db;
+
+        // Try to load from cache first
+        if (empty($this->resolvedTypeCache)) {
+            $cached = $this->loadResolvedTypeCache();
+            if ($cached !== null) {
+                $this->resolvedTypeCache = $cached;
+                error_log("getResolvedTypeRates: loaded cache from file, " . count($this->resolvedTypeCache) . " types");
+                return $this->resolvedTypeCache;
+            }
+            error_log("getResolvedTypeRates: cache not found or corrupt, rebuilding");
+        }
+
         $resolved = [];
 
-        // Build a map of all type IDs to their info
-        $typeMap = [];
-        $result = db_query("SELECT id, name, class_id FROM " . TB_PREF . "chart_types");
+        // Build a map of all type IDs
+        $typeIds = [];
+        $result = db_query("SELECT id FROM " . TB_PREF . "chart_types");
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $typeMap[(string)$row['id']] = [
-                    'name' => $row['name'] ?? '',
-                    'class_id' => $row['class_id'] ?? '',
-                ];
+                $typeIds[] = (string)$row['id'];
             }
         }
 
-        // Resolve rate for each type
-        foreach ($typeMap as $typeId => $info) {
-            $rate = $this->resolveTypeRateWithClass($typeId);
-            $resolved[$typeId] = $rate;
+        // Resolve rate for each type (bulk load for efficiency)
+        foreach ($typeIds as $typeId) {
+            // Walk up the parent chain until we find a type with a direct rate
+            $current = $typeId;
+            $foundDirectRate = false;
+            
+            while ($current !== null && $current !== '') {
+                if (isset($this->typeRates[$current])) {
+                    $resolved[$typeId] = $this->typeRates[$current];
+                    $this->resolvedTypeCache[$typeId] = $this->typeRates[$current];
+                    $foundDirectRate = true;
+                    break;
+                }
+                $current = $this->getParentType($current);
+            }
+            
+            if (!$foundDirectRate) {
+                // No parent had a direct rate, check class then global
+                $classId = $this->getTypeClass($typeId);
+                if ($classId && isset($this->categoryRates[$classId])) {
+                    $resolved[$typeId] = $this->categoryRates[$classId];
+                    $this->resolvedTypeCache[$typeId] = $this->categoryRates[$classId];
+                } else {
+                    $resolved[$typeId] = $this->globalRate;
+                    $this->resolvedTypeCache[$typeId] = $this->globalRate;
+                }
+            }
         }
 
-        $this->resolvedTypeCache = $resolved;
+        // Save to cache file for next time
+        $this->saveResolvedTypeCache($this->resolvedTypeCache);
+
         return $resolved;
-    }
-
-    /**
-     * Resolve rate for a type: Type → Parent Type → Class → Global.
-     * Parent chain is fully recursive - walks up until a type with direct rate is found.
-     *
-     * @param string|int $typeId chart_types.id
-     * @return float Rate
-     */
-    private function resolveTypeRateWithClass($typeId): float
-    {
-        $typeId = (string)$typeId;
-        
-        // Check cache first
-        if (isset($this->resolvedTypeCache[$typeId])) {
-            return $this->resolvedTypeCache[$typeId];
-        }
-
-        // Step 1: Check if this type has a direct rate
-        if (isset($this->typeRates[$typeId])) {
-            $this->resolvedTypeCache[$typeId] = $this->typeRates[$typeId];
-            return $this->typeRates[$typeId];
-        }
-
-        // Step 2: Walk parent chain recursively - stop at first type with direct rate
-        $parentType = $this->getParentType($typeId);
-        if ($parentType !== null && $parentType !== '') {
-            // Check if parent has a direct rate (not inherited)
-            if (isset($this->typeRates[$parentType])) {
-                $this->resolvedTypeCache[$typeId] = $this->typeRates[$parentType];
-                return $this->typeRates[$parentType];
-            }
-            // Parent has no direct rate, recurse to grandparent
-            $rate = $this->resolveTypeRateWithClass($parentType);
-            // If we found a rate via parent chain, use it
-            // But we need to check: was this rate a direct rate or inherited?
-            // If inherited from class/global, we should still check our own class
-            // For now, assume parent chain found a rate and use it
-            if (!isset($this->typeRates[$parentType])) {
-                // Parent rate was inherited, skip it and check our class
-            } else {
-                $this->resolvedTypeCache[$typeId] = $rate;
-                return $rate;
-            }
-        }
-
-        // Step 3: Check class (chart_types.class_id)
-        $classId = $this->getTypeClass($typeId);
-        if (isset($this->categoryRates[$classId])) {
-            $this->resolvedTypeCache[$typeId] = $this->categoryRates[$classId];
-            return $this->categoryRates[$classId];
-        }
-
-        // Step 4: Fall back to global
-        $this->resolvedTypeCache[$typeId] = $this->globalRate;
-        return $this->globalRate;
     }
 
     /**
@@ -252,14 +320,14 @@ class InflationFactorManager
         return $this->categoryRates[(string)$categoryId] ?? null;
     }
 
-    /**
-     * Get effective rate for a GL account.
-     * Resolves hierarchy: GL → Type → Class → Global.
-     * Uses cached resolved type rates if available.
-     *
-     * @param string $glAccount GL account code
-     * @return float Effective inflation rate
-     */
+/**
+      * Get effective rate for a GL account.
+      * Resolves hierarchy: GL → Type → Class → Global.
+      * Uses cached resolved type rates if available.
+      *
+      * @param string $glAccount GL account code
+      * @return float Effective inflation rate
+      */
     public function getRateForAccount(string $glAccount): float
     {
         // GL-specific takes highest precedence
@@ -272,17 +340,25 @@ class InflationFactorManager
 
         if ($accountDetails && $accountDetails['type_id']) {
             $typeId = (string)$accountDetails['type_id'];
-            
+
+            // Try to load from file cache if not already in memory
+            if (empty($this->resolvedTypeCache)) {
+                $cached = $this->loadResolvedTypeCache();
+                if ($cached !== null) {
+                    $this->resolvedTypeCache = $cached;
+                }
+            }
+
             // Use cached resolved rate if available (includes parent/class inheritance)
             if (isset($this->resolvedTypeCache[$typeId])) {
                 return $this->resolvedTypeCache[$typeId];
             }
-            
+
             // Otherwise resolve: Type → Class → Global (no parent chain for individual lookups)
             if (isset($this->typeRates[$typeId])) {
                 return $this->typeRates[$typeId];
             }
-            
+
             $classId = (string)($accountDetails['class_id'] ?? '');
             if ($classId && isset($this->categoryRates[$classId])) {
                 return $this->categoryRates[$classId];

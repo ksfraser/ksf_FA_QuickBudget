@@ -17,6 +17,7 @@ final class InflationFactorManagerTest extends TestCase
     protected function setUp(): void
     {
         $this->manager = new InflationFactorManager();
+        $this->manager->invalidateResolvedTypeCache(); // Clear cache for isolated tests
     }
 
     /**

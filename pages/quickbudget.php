@@ -142,7 +142,13 @@ function handle_create(): void
 
         // FR-09: Generate budget
         $manager = new InflationFactorManager();
-        $manager->loadFromDB();
+
+        // Use cached rates from session if available, otherwise load from DB
+        if (isset($_SESSION['ksf_qb_factors'])) {
+            $manager->loadFromSession($_SESSION['ksf_qb_factors']);
+        } else {
+            $manager->loadFromDB();
+        }
 
         $service = new BudgetGeneratorService($manager);
         error_log("QuickBudget DEBUG: Calling generate(targetYear=$targetYear, startMonth=$startMonth, scenarioId=$scenarioId)");

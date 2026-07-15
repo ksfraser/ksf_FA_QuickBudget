@@ -251,6 +251,7 @@ function handle_save(): void
             $saveSuccess = false;
         }
         $manager->loadFromDB();
+        $manager->invalidateResolvedTypeCache(); // Clear file cache on rate changes
         $_SESSION['ksf_qb_factors'] = $manager->getAllRates();
     }
 
@@ -292,6 +293,10 @@ function handle_import(): void
 
     $repo = new InflationFactorRepository();
     $count = $repo->importFromCsv($csvRows);
+
+    // Invalidate cache after import
+    $manager = new InflationFactorManager();
+    $manager->invalidateResolvedTypeCache();
 
     $msg = urlencode("Imported $count factors");
     header("Location: quickbudget_config.php?message=$msg");
