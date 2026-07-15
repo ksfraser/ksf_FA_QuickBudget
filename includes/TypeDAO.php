@@ -7,7 +7,7 @@
  * Supports FR-03: Type-level inflation factors.
  *
  * Hierarchy for rate resolution:
- *   GL → Type (chart_types.name) → Parent (chart_types.class_id) → Category (chart_class) → Global
+ *   GL → Type (chart_types.id) → Parent (chart_types.parent) → Category (chart_class) → Global
  */
 declare(strict_types=1);
 
@@ -15,15 +15,15 @@ final class TypeDAO
 {
     /**
      * Get all chart types for type rate configuration.
-     * Returns id => name mapping for DDL.
+     * Returns id (string) => name mapping for DDL.
      *
-     * @return array<int, string> id => name
+     * @return array<string, string> id => name
      */
     public function getAllTypes(): array
     {
         global $db;
 
-        if (!is_resource($db) && !($db instanceof mysqli)) {
+        if (empty($db)) {
             return [];
         }
 
@@ -33,11 +33,8 @@ final class TypeDAO
         $types = [];
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $types[(int)$row['id']] = $row['name'];
+                $types[(string)$row['id']] = $row['name'];
             }
-        } else {
-            $error = $db ? (method_exists($db, 'error') ? $db->error : 'no error property') : 'no db connection';
-            error_log("TypeDAO::getAllTypes query failed: $sql - DB error: $error");
         }
 
         return $types;
@@ -62,18 +59,18 @@ final class TypeDAO
     /**
      * Get type name by chart_types.id.
      *
-     * @param int $typeId chart_types.id
+     * @param string|int $typeId chart_types.id
      * @return string|null Type name or null
      */
-    public function getTypeName(int $typeId): ?string
+    public function getTypeName($typeId): ?string
     {
         global $db;
 
-        if (!is_resource($db) && !($db instanceof mysqli)) {
+        if (empty($db)) {
             return null;
         }
 
-        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
+        $result = db_query("SELECT name FROM " . TB_PREF . "chart_types WHERE id = '" . (string)$typeId . "'");
         if (!$result) {
             return null;
         }
@@ -85,24 +82,32 @@ final class TypeDAO
     /**
      * Get parent type ID by chart_types.id.
      *
-     * @param int $typeId chart_types.id
-     * @return int|null Parent id or null
+     * @param string|int $typeId chart_types.id
+     * @return string|null Parent id or null
      */
-    public function getParentType(int $typeId): ?int
+    public function getParentType($typeId): ?string
     {
         global $db;
 
-        if (!is_resource($db) && !($db instanceof mysqli)) {
+        if (empty($db)) {
             return null;
         }
 
-        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
+        $result = db_query("SELECT parent FROM " . TB_PREF . "chart_types WHERE id = '" . (string)$typeId . "'");
         if (!$result) {
             return null;
         }
         $row = db_fetch_assoc($result);
 
-        return $row && $row['class_id'] ? (int)$row['class_id'] : null;
+        if (!$row) {
+            return null;
+        }
+        
+        $parent = $row['parent'] ?? '';
+        if (empty($parent) || $parent === '-1' || $parent === '') {
+            return null;
+        }
+        return (string)$parent;
     }
 
     /**
@@ -110,22 +115,22 @@ final class TypeDAO
      * Used when saving rates to store stable ID instead of mutable name.
      *
      * @param string $typeName chart_types.name
-     * @return int|null chart_types.id or null if not found
+     * @return string|null chart_types.id or null if not found
      */
-    public function getTypeIdByName(string $typeName): ?int
+    public function getTypeIdByName(string $typeName): ?string
     {
         global $db;
 
-        if (!is_resource($db) && !($db instanceof mysqli)) {
+        if (empty($db)) {
             return null;
         }
 
-        $result = db_query("SELECT id FROM " . TB_PREF . "chart_types WHERE name = '" . mysqli_real_escape_string($db, $typeName) . "'");
+        $result = db_query("SELECT id FROM " . TB_PREF . "chart_types WHERE name = '" . addslashes($typeName) . "'");
         if (!$result) {
             return null;
         }
         $row = db_fetch_assoc($result);
 
-        return $row ? (int)$row['id'] : null;
+        return $row ? $row['id'] : null;
     }
 }

@@ -53,7 +53,7 @@ final class InflationFactorManagerTest extends TestCase
 
         $all = $this->manager->getAllRates();
         $this->assertArrayHasKey('type', $all);
-        $this->assertArrayHasKey(1, $all['type']);
+        $this->assertArrayHasKey('1', $all['type']);
     }
 
     /**

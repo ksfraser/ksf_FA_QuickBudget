@@ -18,7 +18,7 @@ final class CategoryDAO
 
     /**
      * Get account_type to class_id mapping.
-     * Uses chart_types.ctype to chart_class.cid relationship.
+     * Uses chart_types.class_id to chart_class.cid relationship.
      *
      * @return array<int, string> account_type => class_id
      */
@@ -32,11 +32,11 @@ final class CategoryDAO
 
         $map = [];
         if (is_resource($db) || ($db instanceof mysqli)) {
-            $sql = "SELECT id, ctype FROM " . TB_PREF . "chart_types ORDER BY id";
+            $sql = "SELECT id, class_id FROM " . TB_PREF . "chart_types ORDER BY id";
             $result = db_query($sql);
             if ($result) {
                 while ($row = db_fetch_assoc($result)) {
-                    $map[(int)$row['id']] = (string)$row['ctype'];
+                    $map[(int)$row['id']] = (string)$row['class_id'];
                 }
             }
         }

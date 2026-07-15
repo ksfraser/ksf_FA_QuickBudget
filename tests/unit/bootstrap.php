@@ -16,6 +16,7 @@ $db = new stdClass();
 $GLOBALS['db'] = $db;
 
 // Mock mysqli_real_escape_string for tests (accepts any object as first param)
+// Use runkit or override via namespaced function where possible
 if (!function_exists('mysqli_real_escape_string')) {
     function mysqli_real_escape_string($link, $escapestr) {
         return addslashes($escapestr);
@@ -77,21 +78,21 @@ class MockDbResult {
 
         // Handle account details query (chart_master join) - returns class_id (ctype) for category lookup
         if (stripos($this->sql, 'chart_master') !== false) {
-            return ['type_id' => 1, 'type_name' => 'Utilities', 'parent_id' => 2, 'class_id' => 1];
+            return ['type_id' => '1', 'type_name' => 'Utilities', 'parent_id' => '2', 'class_id' => '1'];
         }
 
         // Handle chart_types queries for type name/parent/class (supports multiple types)
         if (stripos($this->sql, 'chart_types') !== false) {
             // Return at least one type, then stop
             if ($this->fetchCount === 1) {
-                return ['id' => 1, 'name' => 'Utilities', 'class_id' => 2, 'ctype' => 1];
+                return ['id' => '1', 'name' => 'Utilities', 'class_id' => '2', 'parent' => ''];
             }
             return false;
         }
 
         // Handle chart_class queries
         if (stripos($this->sql, 'chart_class') !== false) {
-            return ['cid' => 1, 'class_name' => 'expenses'];
+            return ['cid' => '1', 'class_name' => 'expenses'];
         }
 
         return false;

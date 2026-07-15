@@ -24,8 +24,8 @@ final class RateSectionRendererTest extends TestCase
      */
     public function testRendersTableBeforeForm(): void
     {
-        $rates = [1 => 1.05];
-        $options = [1 => 'Income', 2 => 'Expenses', 3 => 'COGS', 4 => 'Assets'];
+        $rates = ['1' => 1.05];
+        $options = ['1' => 'Income', '2' => 'Expenses', '3' => 'COGS', '4' => 'Assets'];
         $result = RateSectionRenderer::render('category', 'Category Rates', 'Category', $rates, $options, 10, 'cat_page');
         
         $tablePos = strpos($result, '<table');
@@ -41,8 +41,8 @@ final class RateSectionRendererTest extends TestCase
      */
     public function testIncludesRateValues(): void
     {
-        $rates = [1 => 1.05];
-        $options = [1 => 'Expenses'];
+        $rates = ['1' => 1.05];
+        $options = ['1' => 'Expenses'];
         $result = RateSectionRenderer::render('category', 'Category Rates', 'Category', $rates, $options, 10, 'cat_page');
         
         $this->assertStringContainsString('1.05', $result);
@@ -78,7 +78,7 @@ final class RateSectionRendererTest extends TestCase
     public function testRendersAllOptionsInSelect(): void
     {
         $rates = [];
-        $options = [1 => 'Income', 2 => 'COGS', 3 => 'Expenses', 4 => 'Assets'];
+        $options = ['1' => 'Income', '2' => 'COGS', '3' => 'Expenses', '4' => 'Assets'];
         $result = RateSectionRenderer::render('category', 'Category Rates', 'Category', $rates, $options, 10, 'cat_page');
         
         $this->assertStringContainsString('Income', $result);
@@ -92,9 +92,9 @@ final class RateSectionRendererTest extends TestCase
      */
     public function testRenderTypeCacheShowsAllTypesWithNames(): void
     {
-        // Pass id => name mapping, rates keyed by lowercase name (from getResolvedTypeRates)
-        $rates = ['resolved_types' => ['utilities' => 1.05, 'services' => 1.10], 'global' => 1.02];
-        $allTypes = [1 => 'Utilities', 2 => 'Services', 3 => 'Income'];
+        // Pass id => name mapping, rates keyed by typeId (string) per new architecture
+        $rates = ['resolved_types' => ['1' => 1.05, '2' => 1.10], 'global' => 1.02];
+        $allTypes = ['1' => 'Utilities', '2' => 'Services', '3' => 'Income'];
         $result = RateSectionRenderer::renderTypeCache($rates, $allTypes);
         
         $this->assertStringContainsString('Utilities', $result);
@@ -102,6 +102,6 @@ final class RateSectionRendererTest extends TestCase
         $this->assertStringContainsString('Income', $result);
         $this->assertStringContainsString('1.05', $result);
         $this->assertStringContainsString('1.1', $result);
-        $this->assertStringContainsString('1.0200', $result);
+        $this->assertStringContainsString('1.02', $result);
     }
 }

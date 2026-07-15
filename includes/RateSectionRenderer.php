@@ -7,7 +7,7 @@ class RateSectionRenderer
     {
         $rateItems = [];
         foreach ($rates as $ref => $rate) {
-            // ref is the rate key (int for type, string for category/GL)
+            // ref is the rate key (string for type, int for category/GL)
             // options is key => display_name mapping
             $rateItems[] = ['ref' => $ref, 'rate' => $rate, 'name' => $options[$ref] ?? $ref];
         }
@@ -53,7 +53,7 @@ class RateSectionRenderer
             if (empty($key)) {
                 continue;
             }
-            // options is int => display_name for types, rates are keyed by int
+            // options is key => display_name, rates are keyed by same key type
             $selected = isset($rates[$key]) ? ' selected' : '';
             $output .= "<option value='" . htmlspecialchars((string)$key) . "'$selected>" . htmlspecialchars((string)$name) . "</option>";
         }
@@ -92,20 +92,19 @@ class RateSectionRenderer
         $output .= "<button type='button' class='close' data-dismiss='modal'>&times;</button></div>";
         $output .= "<div class='modal-body'>";
         $output .= "<table class='table table-sm table-bordered'>";
-        $output .= "<thead><tr><th>" . _("Type Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
+        $output .= "<thead><tr><th>" . _("Type ID") . "</th><th>" . _("Type Name") . "</th><th>" . _("Rate") . "</th></tr></thead>";
         $output .= "<tbody>";
         
         $resolvedRates = $rates['resolved_types'] ?? [];
-        $globalRate = $rates['global'] ?? 1.0;
         
         if (!empty($allTypes)) {
+            // allTypes is typeId => name, resolvedRates is now typeId => rate
             foreach ($allTypes as $typeId => $name) {
-                $rate = $resolvedRates[strtolower($name)] ?? $globalRate;
-                $rateDisplay = $rate === $globalRate ? number_format($rate, 4) : $rate;
-                $output .= "<tr><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rateDisplay) . "</td></tr>";
+                $rate = $resolvedRates[(string)$typeId] ?? $rates['global'] ?? 1.0;
+                $output .= "<tr><td>" . htmlspecialchars((string)$typeId) . "</td><td>" . htmlspecialchars((string)$name) . "</td><td>" . htmlspecialchars((string)$rate) . "</td></tr>";
             }
         } else {
-            $output .= "<tr><td colspan='2' class='text-center'>" . _("No type rates configured") . "</td></tr>";
+            $output .= "<tr><td colspan='3' class='text-center'>" . _("No type rates configured") . "</td></tr>";
         }
         
         $output .= "</tbody></table>";

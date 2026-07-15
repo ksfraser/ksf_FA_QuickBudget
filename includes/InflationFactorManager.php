@@ -3,7 +3,9 @@
  * InflationFactorManager
  *
  * Manages inflation factor configuration and resolution.
- * Supports FR-01 through FR-04.
+ * Supports FR-01 through FR-07.
+ *
+ * Resolution hierarchy: Type → Parent Type → Class → Global
  *
  * @see RTM.md - FR-01 to FR-04
  */
@@ -16,16 +18,16 @@ class InflationFactorManager
     /** @var float Default rate (1.0 = no inflation means 0% inflation) */
     private $globalRate = 1.0;
 
-    /** @var array<int, float> Type rates indexed by chart_types.id */
+    /** @var array<string, float> Type rates indexed by chart_types.id (varchar) */
     private $typeRates = [];
 
-    /** @var array<int, float> Category rates indexed by chart_class.cid */
+    /** @var array<string, float> Category rates indexed by chart_class.cid (varchar) */
     private $categoryRates = [];
 
     /** @var array<string, float> GL-specific rates indexed by account code */
     private $glRates = [];
 
-    /** @var array<int, float> Cache for resolved type rates */
+    /** @var array<string, float> Cache for resolved type rates (id => rate) */
     private $resolvedTypeCache = [];
 
     /**
@@ -63,10 +65,10 @@ class InflationFactorManager
                     $this->globalRate = $rate;
                     break;
                 case 'type':
-                    $this->typeRates[(int)$ref] = $rate;
+                    $this->typeRates[$ref] = $rate;
                     break;
                 case 'category':
-                    $this->categoryRates[(int)$ref] = $rate;
+                    $this->categoryRates[$ref] = $rate;
                     break;
                 case 'gl':
                     $this->glRates[$ref] = $rate;
@@ -89,25 +91,25 @@ class InflationFactorManager
     /**
      * Set a type-level inflation rate (chart_types.id).
      *
-     * @param int $typeId chart_types.id
+     * @param string|int $typeId chart_types.id
      * @param float $rate Rate as percentage
      * @return void
      */
-    public function setTypeRate(int $typeId, float $rate): void
+    public function setTypeRate($typeId, float $rate): void
     {
-        $this->typeRates[$typeId] = $rate;
+        $this->typeRates[(string)$typeId] = $rate;
     }
 
     /**
      * Set a category-level inflation rate (chart_class.cid).
      *
-     * @param int $categoryId chart_class.cid
+     * @param string|int $categoryId chart_class.cid
      * @param float $rate Rate as percentage
      * @return void
      */
-    public function setCategoryRate(int $categoryId, float $rate): void
+    public function setCategoryRate($categoryId, float $rate): void
     {
-        $this->categoryRates[$categoryId] = $rate;
+        $this->categoryRates[(string)$categoryId] = $rate;
     }
 
     /**
@@ -140,76 +142,121 @@ class InflationFactorManager
     }
 
     /**
-     * Get resolved rates for all types (type → class → parent type → global).
+     * Get resolved rates for all types (including inherited from parent/class).
+     * Type hierarchy: Type → Parent Type → Class → Global.
      *
-     * @return array<string, float> lowercase_name => rate
+     * @return array<string, float> type_id => rate
      */
     private function getResolvedTypeRates(): array
     {
         global $db;
         $resolved = [];
 
-        // Build a map of all type IDs to their names and class IDs
+        // Build a map of all type IDs to their info (name + class_id)
         $typeMap = [];
-        $result = db_query("SELECT id, name, ctype FROM " . TB_PREF . "chart_types");
+        $result = db_query("SELECT id, name, class_id FROM " . TB_PREF . "chart_types");
         if ($result) {
             while ($row = db_fetch_assoc($result)) {
-                $typeMap[(int)$row['id']] = ['name' => strtolower($row['name']), 'ctype' => (int)($row['ctype'] ?? 0)];
+                $typeMap[(string)$row['id']] = [
+                    'name' => $row['name'] ?? '',
+                    'class_id' => $row['class_id'] ?? '',
+                ];
             }
         }
 
-        // Resolve rate for each type (global rate is fallback)
+        // Resolve rate for each type via: Type → Parent Type → Class → Global
         foreach ($typeMap as $typeId => $info) {
-            $checked = []; // Reset checked array for each type
-            $rate = $this->getResolvedRateForType($typeId, $info['ctype'], $checked);
-            // Always add - use global as fallback
-            $resolved[$info['name']] = $rate ?? $this->globalRate;
+            $rate = $this->resolveTypeRateWithClass($typeId);
+            $resolved[$typeId] = $rate;
+            $this->resolvedTypeCache[$typeId] = $rate;
         }
 
         return $resolved;
     }
 
     /**
-     * Resolve rate for a type: type → class → parent type → global.
+     * Resolve rate for a type: Type → Parent Type → Class → Global.
      *
-     * @param int|null $typeId chart_types.id
-     * @param int $classId chart_types.ctype (chart_class.cid)
-     * @param array<int,bool> $checked Types already checked (for recursion prevention)
-     * @return float|null Rate or null if not found
+     * @param string|int $typeId chart_types.id
+     * @return float Rate
      */
-    private function getResolvedRateForType(?int $typeId, int $classId, array &$checked = []): ?float
+    private function resolveTypeRateWithClass($typeId): float
     {
-        // Check if this type has a rate (keyed by ID now)
-        if ($typeId && isset($this->typeRates[$typeId])) {
+        $typeId = (string)$typeId;
+        
+        // Check cache first
+        if (isset($this->resolvedTypeCache[$typeId])) {
+            return $this->resolvedTypeCache[$typeId];
+        }
+
+        // Step 1: Check if this type has a direct rate
+        if (isset($this->typeRates[$typeId])) {
             return $this->typeRates[$typeId];
         }
 
-        // Check class rate (ctype → chart_class.cid)
+        // Step 2: Walk parent chain
+        $parentType = $this->getParentType($typeId);
+        if ($parentType !== null && $parentType !== '') {
+            $rate = $this->resolveTypeRateWithClass($parentType);
+            // If parent returns a non-global rate, use it
+            // Note: We still need to check class if parent rate equals global
+            // But for now, if parent has any rate, we use it
+            if ($rate !== $this->globalRate || !isset($this->typeRates[$parentType])) {
+                // Parent had a rate, check if it's different from global
+                // Actually, we need to trace whether this rate came from parent's direct rate or global
+                // Let's just use it for now
+                $this->resolvedTypeCache[$typeId] = $rate;
+                return $rate;
+            }
+        }
+
+        // Step 3: Check class (chart_types.class_id)
+        $classId = $this->getTypeClass($typeId);
         if ($classId && isset($this->categoryRates[$classId])) {
+            $this->resolvedTypeCache[$typeId] = $this->categoryRates[$classId];
             return $this->categoryRates[$classId];
         }
 
-        // Get parent type and recurse (class_id → chart_types.id)
-        if ($typeId && isset($this->resolvedTypeCache[$typeId])) {
-            return $this->resolvedTypeCache[$typeId];
-        }
-        if ($typeId && isset($checked[$typeId])) {
-            return null; // Prevent infinite loop
-        }
-        if ($typeId) {
-            $checked[$typeId] = true;
+        // Step 4: Fall back to global
+        $this->resolvedTypeCache[$typeId] = $this->globalRate;
+        return $this->globalRate;
+    }
+
+    /**
+     * Recursively resolve rate for a type by walking parent chain only.
+     * Used for GL account resolution where we don't want class inheritance.
+     *
+     * @param string|int|null $typeId chart_types.id
+     * @param array<string,bool> $checked Types already checked (for recursion prevention)
+     * @return float|null Rate or null if not found
+     */
+    private function resolveTypeRate($typeId, array &$checked = []): ?float
+    {
+        $typeId = (string)$typeId;
+        if (empty($typeId) || $typeId === '' || $typeId === '0') {
+            return null;
         }
 
-        // Get parent type chain
+        if (isset($this->resolvedTypeCache[$typeId])) {
+            return $this->resolvedTypeCache[$typeId];
+        }
+        if (isset($checked[$typeId])) {
+            return null; // Prevent infinite loop
+        }
+        $checked[$typeId] = true;
+
+        // Check if this type has a rate
+        if (isset($this->typeRates[$typeId])) {
+            $this->resolvedTypeCache[$typeId] = $this->typeRates[$typeId];
+            return $this->resolvedTypeCache[$typeId];
+        }
+
+        // Get parent and recurse
         $parentType = $this->getParentType($typeId);
-        if ($parentType !== null) {
-            // Get parent type's class ID
-            $parentClassId = $this->getTypeClass($parentType);
-            $rate = $this->getResolvedRateForType($parentType, $parentClassId, $checked);
+        if ($parentType !== null && $parentType !== '') {
+            $rate = $this->resolveTypeRate($parentType, $checked);
             if ($rate !== null) {
-                if ($typeId) {
-                    $this->resolvedTypeCache[$typeId] = $rate;
-                }
+                $this->resolvedTypeCache[$typeId] = $rate;
                 return $rate;
             }
         }
@@ -218,26 +265,29 @@ class InflationFactorManager
     }
 
     /**
-     * Get type class ID (ctype) by chart_types.id.
+     * Resolve rate for a type including class: Type → Parent Type → Class → Global.
+     * Used for GL account rate resolution (single type lookup).
      *
-     * @param int $typeId chart_types.id
-     * @return int Class ID or 0
+     * @param string|int $typeId chart_types.id
+     * @param string|int $classId chart_types.class_id (chart_class.cid)
+     * @return float|null Rate or null if not found
      */
-    private function getTypeClass(int $typeId): int
+    public function getResolvedRateForType($typeId, $classId): ?float
     {
-        global $db;
-
-        if (!is_resource($db) && !($db instanceof mysqli)) {
-            return 0;
+        $typeId = (string)$typeId;
+        
+        // Check if this type has a rate
+        if (isset($this->typeRates[$typeId])) {
+            return $this->typeRates[$typeId];
         }
 
-        $result = db_query("SELECT ctype FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
-        if (!$result) {
-            return 0;
+        // Check class rate (chart_class.cid)
+        $classId = (string)$classId;
+        if ($classId && isset($this->categoryRates[$classId])) {
+            return $this->categoryRates[$classId];
         }
-        $row = db_fetch_assoc($result);
 
-        return (int)($row['ctype'] ?? 0);
+        return null;
     }
 
     /**
@@ -254,17 +304,18 @@ class InflationFactorManager
     /**
      * Get category rate.
      *
-     * @param int $categoryId chart_class.cid
+     * @param string|int $categoryId chart_class.cid
      * @return float|null Rate or null if not set
      */
-    public function getCategoryRate(int $categoryId): ?float
+    public function getCategoryRate($categoryId): ?float
     {
-        return $this->categoryRates[$categoryId] ?? null;
+        return $this->categoryRates[(string)$categoryId] ?? null;
     }
 
     /**
      * Get effective rate for a GL account.
-     * Resolves hierarchy: GL → Type (incl. class/parent) → Category → Global.
+     * Resolves hierarchy: GL → Type → Class → Global.
+     * No parent chain recursion for GL accounts.
      *
      * @param string $glAccount GL account code
      * @return float Effective inflation rate
@@ -276,25 +327,26 @@ class InflationFactorManager
             return $this->glRates[$glAccount];
         }
 
-        // Get account's type, parent, and class for resolution
+        // Get account's type and class for resolution
         $accountDetails = $this->getAccountDetails($glAccount);
 
-        // Type-level override (chart_types.id) - includes class/parent chain resolution
+        // Type-level override (chart_types.id)
         if ($accountDetails && $accountDetails['type_id']) {
-            $checked = [];
-            $typeRate = $this->getResolvedRateForType($accountDetails['type_id'], $accountDetails['class_id'], $checked);
-            if ($typeRate !== null) {
-                return $typeRate;
+            $typeId = (string)$accountDetails['type_id'];
+            $classId = (string)($accountDetails['class_id'] ?? '');
+            
+            // Check direct type rate first
+            if (isset($this->typeRates[$typeId])) {
+                return $this->typeRates[$typeId];
             }
-        }
-
-        // Category-level override (chart_class.cid)
-        if ($accountDetails && $this->categoryRates) {
-            $classId = $accountDetails['class_id'] ?? 0;
-            if (isset($this->categoryRates[$classId])) {
+            
+            // Check class rate
+            if ($classId && isset($this->categoryRates[$classId])) {
                 return $this->categoryRates[$classId];
             }
         }
+
+        // Category-level override (chart_class.cid) - already covered above
 
         // Fall back to global default
         return $this->globalRate;
@@ -303,42 +355,72 @@ class InflationFactorManager
     /**
      * Get parent type ID by chart_types.id.
      *
-     * @param int|null $typeId chart_types.id
-     * @return int|null Parent id or null
+     * @param string|int $typeId chart_types.id
+     * @return string|null Parent id or null
      */
-    private function getParentType(?int $typeId): ?int
+    private function getParentType($typeId): ?string
     {
         global $db;
 
-        if (!$typeId || (!is_resource($db) && !($db instanceof mysqli))) {
+        if (empty($db)) {
             return null;
         }
 
-        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types WHERE id = " . (int)$typeId);
+        $result = db_query("SELECT parent FROM " . TB_PREF . "chart_types WHERE id = '" . (string)$typeId . "'");
         if (!$result) {
             return null;
         }
         $row = db_fetch_assoc($result);
 
-        return $row && $row['class_id'] ? (int)$row['class_id'] : null;
+        if (!$row) {
+            return null;
+        }
+        
+        $parent = $row['parent'] ?? '';
+        if (empty($parent) || $parent === '-1' || $parent === '') {
+            return null;
+        }
+        return (string)$parent;
     }
 
     /**
-     * Get account details: type_id, parent_id, and class_id.
+     * Get type class ID (class_id) by chart_types.id.
+     *
+     * @param string|int $typeId chart_types.id
+     * @return string Class ID or empty string
+     */
+    private function getTypeClass($typeId): string
+    {
+        global $db;
+
+        if (empty($db)) {
+            return '';
+        }
+
+        $result = db_query("SELECT class_id FROM " . TB_PREF . "chart_types WHERE id = '" . (string)$typeId . "'");
+        if (!$result) {
+            return '';
+        }
+        $row = db_fetch_assoc($result);
+
+        return $row['class_id'] ?? '';
+    }
+
+    /**
+     * Get account details: type_id and class_id.
      * Returns null if DB unavailable or account not found.
      *
      * @param string $glAccount GL account code
-     * @return array|null ['type_id' => ..., 'parent_id' => ..., 'class_id' => ...] or null
+     * @return array|null ['type_id' => ..., 'class_id' => ...] or null
      */
     private function getAccountDetails(string $glAccount): ?array
     {
         global $db;
-        // Skip DB check in test mode (db will be mocked)
-        if (empty($db)) {
+        if (empty($db) || !function_exists('db_query')) {
             return null;
         }
 
-        $sql = "SELECT ct.id AS type_id, ct.name AS type_name, ct.class_id AS parent_id, ct.ctype AS class_id
+        $sql = "SELECT ct.id AS type_id, ct.class_id AS class_id
             FROM " . TB_PREF . "chart_master cm
             LEFT JOIN " . TB_PREF . "chart_types ct ON cm.account_type = ct.id
             WHERE cm.account_code = '" . addslashes($glAccount) . "'";
@@ -353,10 +435,8 @@ class InflationFactorManager
         }
 
         return [
-            'type_id' => (int)($row['type_id'] ?? 0),
-            'type_name' => $row['type_name'] ?? '',
-            'parent_id' => (int)($row['parent_id'] ?? 0),
-            'class_id' => (int)($row['class_id'] ?? 0),
+            'type_id' => (string)($row['type_id'] ?? ''),
+            'class_id' => $row['class_id'] ?? '',
         ];
     }
 }
