@@ -24,7 +24,10 @@ require_once('../includes/BudgetEntryDTO.php');
 require_once('../includes/InflationFactorManager.php');
 require_once('../includes/ScenarioRepository.php');
 require_once('../includes/BudgetLogger.php');
+require_once(dirname(__DIR__) . '/vendor/autoload.php');
+use \ksfraser\FrontAccounting\Common\Utils\FlashMessage;
 require_once('../src/Service/BudgetGeneratorService.php');
+
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
 
@@ -49,10 +52,7 @@ function render_view(): void
 
     page(_("Quick Budget"), false, false, '', '');
 
-    // Show messages
-    if (isset($_GET['message'])) {
-        echo "<div class='alert alert-info'>" . htmlspecialchars($_GET['message']) . "</div>";
-    }
+    FlashMessage::display();
 
     echo "<div class='card'>";
     echo "<h3>" . _("Generate Budget") . "</h3>";
@@ -134,9 +134,10 @@ function handle_create(): void
         // FR-12: Check for existing budget - prompt if exists for months before startMonth
         $existingCount = get_existing_budget_count($targetYear, $startMonth > 1 ? 1 : $startMonth);
         if ($existingCount > 0 && $startMonth > 1) {
-            $msg = urlencode(_("Budget already exists for some months. Delete existing entries first."));
-            echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
-            exit;
+            FlashMessage::redirect(_("Budget already exists for some months. Delete existing entries first."), 'quickbudget.php');
+
+
+
         }
 
         // FR-09: Generate budget
@@ -182,14 +183,10 @@ function handle_create(): void
         $logger->close();
 
         error_log("QuickBudget: $message - verify=" . $verifyRow['cnt'] . " rows - log=" . $logger->getLogPath());
-        $msg = urlencode($message . " (log: " . basename($logger->getLogPath()) . ")");
-        echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
-        exit;
+        FlashMessage::redirect($message . " (log: " . basename($logger->getLogPath()) . ")", 'quickbudget.php');
     } catch (\Exception $e) {
         error_log("QuickBudget error: " . $e->getMessage());
-        $msg = urlencode("Error: " . $e->getMessage());
-        echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
-        exit;
+        FlashMessage::redirect("Error: " . $e->getMessage(), 'quickbudget.php');
     }
 }
 
