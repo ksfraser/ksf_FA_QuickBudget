@@ -123,6 +123,10 @@ class InflationFactorManager
     {
         $json = json_encode($resolved);
         if ($json !== false) {
+            $dir = dirname($this->cacheFile);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
             file_put_contents($this->cacheFile, $json);
         }
     }
