@@ -24,12 +24,22 @@ final class BudgetGeneratorService
     /** @var InflationFactorManager */
     private $factorManager;
 
+    /** @var BudgetLogger|null */
+    private $logger;
+
     /**
      * @param InflationFactorManager $factorManager
+     * @param BudgetLogger|null $logger
      */
-    public function __construct(InflationFactorManager $factorManager)
+    public function __construct(InflationFactorManager $factorManager, ?BudgetLogger $logger = null)
     {
         $this->factorManager = $factorManager;
+        $this->logger = $logger;
+    }
+
+    public function setLogger(BudgetLogger $logger): void
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -47,63 +57,88 @@ final class BudgetGeneratorService
 
         $sourceYear = $targetYear - 1;
 
-        // FR-13: Get scenario multiplier (1.0 = baseline)
         $scenarioMultiplier = $this->getScenarioMultiplier($scenarioId);
+        $scenarioName = $this->getScenarioName($scenarioId);
+
+        if ($this->logger) {
+            $this->logger->logHeader($targetYear, $startMonth, $scenarioName, $scenarioMultiplier);
+            $this->logger->logInfo("Source year: $sourceYear");
+            $this->logger->logSeparator();
+            $this->logger->logInfo("");
+        }
 
         $entries = [];
-
-        // Get all GL accounts with actuals in source year
         $glAccounts = $this->getGLAccountsWithActuals($sourceYear);
+
+        if ($this->logger) {
+            $this->logger->logInfo("GL accounts with actuals in $sourceYear: " . count($glAccounts));
+            $this->logger->logInfo("");
+        }
 
         foreach ($glAccounts as $glAccount) {
             $actuals = $this->getActualsByGL($glAccount, $sourceYear);
             $inflationRate = $this->factorManager->getRateForAccount($glAccount);
+            $accountName = $this->getAccountName($glAccount);
 
-            $budgetAmounts = [];
-            for ($month = $startMonth; $month <= 12; $month++) {
-                $actualAmount = $actuals[$month] ?? 0.0;
-                
-                // Rate is stored as percentage (e.g., 3.5 = 3.5% inflation)
-                // Scenario multiplier applies: 3.5% * 1.1 = 3.85%
-                $effectiveRate = $inflationRate * $scenarioMultiplier;
-                
-                // Convert percentage to multiplier: 3.85% -> 1.0385
-                $rateMultiplier = 1.0 + ($effectiveRate / 100.0);
-                
-                $budgetAmounts[$month] = $actualAmount * $rateMultiplier;
+            if ($this->logger) {
+                $this->logger->logGLHeader($glAccount, $accountName, $inflationRate);
             }
 
-            $entries[] = new BudgetEntryDTO(
-                $glAccount,
-                $targetYear,
-                $budgetAmounts
-            );
+            $budgetAmounts = [];
+            $glTotalBudget = 0.0;
+            $glTotalActual = 0.0;
+
+            for ($month = $startMonth; $month <= 12; $month++) {
+                $actualAmount = $actuals[$month] ?? 0.0;
+                $effectiveRate = $inflationRate * $scenarioMultiplier;
+                $rateMultiplier = 1.0 + ($effectiveRate / 100.0);
+                $budgetAmounts[$month] = $actualAmount * $rateMultiplier;
+
+                if ($this->logger) {
+                    if ($actualAmount != 0.0 || $budgetAmounts[$month] != 0.0) {
+                        $this->logger->logMonthEntry($glAccount, $month, $actualAmount, $budgetAmounts[$month], $rateMultiplier);
+                    }
+                }
+
+                $glTotalActual += $actualAmount;
+                $glTotalBudget += $budgetAmounts[$month];
+            }
+
+            if ($this->logger) {
+                $this->logger->logInfo("  Total: actual $" . number_format($glTotalActual, 2) . " -> budget $" . number_format($glTotalBudget, 2));
+                $this->logger->logInfo("");
+            }
+
+            $entries[] = new BudgetEntryDTO($glAccount, $targetYear, $budgetAmounts);
+        }
+
+        if ($this->logger) {
+            $this->logger->logInfo("Generation complete: " . count($entries) . " GL accounts");
         }
 
         return $entries;
     }
 
-    /**
-     * Get scenario multiplier from database.
-     *
-     * @param int $scenarioId
-     * @return float Multiplier (default 1.0 for baseline)
-     * @see FR-13
-     */
     private function getScenarioMultiplier(int $scenarioId): float
     {
         global $db;
+        if ($scenarioId <= 0) return 1.0;
 
-        if ($scenarioId <= 0) {
-            return 1.0;
-        }
-
-        $sql = "SELECT multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios
-            WHERE id = " . (int)$scenarioId;
+        $sql = "SELECT multiplier FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE id = " . (int)$scenarioId;
         $result = db_query($sql, null);
         $row = db_fetch_assoc($result);
-
         return $row ? (float)$row['multiplier'] : 1.0;
+    }
+
+    private function getScenarioName(int $scenarioId): string
+    {
+        global $db;
+        if ($scenarioId <= 0) return 'Baseline';
+
+        $sql = "SELECT name FROM " . TB_PREF . "ksf_quickbudget_scenarios WHERE id = " . (int)$scenarioId;
+        $result = db_query($sql, null);
+        $row = db_fetch_assoc($result);
+        return $row ? $row['name'] : 'Unknown';
     }
 
     /**
@@ -120,33 +155,56 @@ final class BudgetGeneratorService
         global $db;
 
         $count = 0;
+        $totalAmount = 0.0;
+        $errors = 0;
+
+        if ($this->logger) {
+            $this->logger->logInfo("");
+            $this->logger->logSeparator();
+            $this->logger->logInfo("Saving to FA budget_trans...");
+            $this->logger->logInfo("");
+        }
+
         foreach ($entries as $entry) {
             $monthlyAmounts = $entry->getMonthlyAmounts();
             foreach ($monthlyAmounts as $month => $amount) {
                 if ($amount != 0.0) {
                     $sqlDate = sprintf('%04d-%02d-01', $entry->getYear(), $month);
 
-                    // DELETE then INSERT to avoid duplicates (FA budget_trans may not have unique key)
-                    $sql = "DELETE FROM " . TB_PREF . "budget_trans
+                    $deleteSql = "DELETE FROM " . TB_PREF . "budget_trans
                         WHERE tran_date = '" . safe_escape($db, $sqlDate) . "'
                         AND account = '" . safe_escape($db, $entry->getGLAccount()) . "'";
-                    db_query($sql);
-                    
-                    $sql = "INSERT INTO " . TB_PREF . "budget_trans
-                        (tran_date, account, dimension_id, dimension2_id, amount)
+                    $deleteResult = db_query($deleteSql);
+
+                    if (!$deleteResult) {
+                        $errors++;
+                        if ($this->logger) {
+                            $this->logger->logError('DELETE', "Failed for " . $entry->getGLAccount() . " $sqlDate");
+                        }
+                    }
+
+                    $insertSql = "INSERT INTO " . TB_PREF . "budget_trans
+                        (tran_date, account, dimension_id, dimension2_id, amount, memo_)
                         VALUES ('" . safe_escape($db, $sqlDate) . "',
                             '" . safe_escape($db, $entry->getGLAccount()) . "',
-                            0, 0, " . (float)$amount . ")";
-                    $result = db_query($sql);
-                    if (!$result) {
-                        error_log("QuickBudget ERROR: SQL: $sql");
+                            0, 0, " . (float)$amount . ", 'QuickBudget')";
+                    $result = db_query($insertSql);
+
+                    if ($result) {
+                        $count++;
+                        $totalAmount += $amount;
+                    } else {
+                        $errors++;
+                        $err = db_error_msg($db);
+                        if ($this->logger) {
+                            $this->logger->logError('INSERT', "Failed: " . $entry->getGLAccount() . " $sqlDate $" . number_format($amount, 2) . " - $err");
+                        }
+                        error_log("QuickBudget ERROR: INSERT failed for " . $entry->getGLAccount() . ": $insertSql - $err");
                     }
-                    $count++;
                 }
             }
         }
 
-        // FR-21: Submit for approval if requested
         if ($submitForApproval) {
             foreach ($entries as $entry) {
                 $monthlyAmounts = $entry->getMonthlyAmounts();
@@ -159,17 +217,20 @@ final class BudgetGeneratorService
             }
         }
 
+        if ($this->logger) {
+            $this->logger->logSummary(
+                count($entries),
+                $count,
+                $totalAmount
+            );
+            if ($errors > 0) {
+                $this->logger->logError('SAVE', "$errors errors occurred during save");
+            }
+        }
+
         return $count;
     }
 
-    /**
-     * Create approval record for a budget entry.
-     *
-     * @param string $tranDate Date in Y-m-d format
-     * @param string $glAccount GL account code
-     * @return void
-     * @see FR-21
-     */
     private function submitForApproval(string $tranDate, string $glAccount): void
     {
         global $db;
@@ -182,12 +243,6 @@ final class BudgetGeneratorService
         db_query($sql, null);
     }
 
-    /**
-     * Get GL accounts that have actuals in the specified year.
-     *
-     * @param int $year
-     * @return array<string>
-     */
     private function getGLAccountsWithActuals(int $year): array
     {
         global $db;
@@ -200,7 +255,6 @@ final class BudgetGeneratorService
         while ($row = db_fetch_assoc($result)) {
             $accounts[] = $row['account'];
         }
-
         return $accounts;
     }
 
@@ -219,7 +273,19 @@ final class BudgetGeneratorService
         while ($row = db_fetch_assoc($result)) {
             $monthly[(int)$row['month']] = (float)$row['total'];
         }
-
         return $monthly;
+    }
+
+    private function getAccountName(string $accountCode): string
+    {
+        global $db;
+
+        $sql = "SELECT account_name FROM " . TB_PREF . "chart_master
+            WHERE account_code = '" . safe_escape($db, $accountCode) . "'";
+        $result = db_query($sql, null);
+        if ($result && $row = db_fetch_assoc($result)) {
+            return $row['account_name'];
+        }
+        return $accountCode;
     }
 }

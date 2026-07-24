@@ -23,6 +23,7 @@ if (file_exists($glTransInc)) {
 require_once('../includes/BudgetEntryDTO.php');
 require_once('../includes/InflationFactorManager.php');
 require_once('../includes/ScenarioRepository.php');
+require_once('../includes/BudgetLogger.php');
 require_once('../src/Service/BudgetGeneratorService.php');
 
 $page = isset($_GET['action']) ? $_GET['action'] : 'view';
@@ -139,6 +140,10 @@ function handle_create(): void
         }
 
         // FR-09: Generate budget
+        // Create logger
+        $companyPath = $path_to_root . '/company';
+        $logger = new BudgetLogger($companyPath);
+
         $manager = new InflationFactorManager();
 
         // Use cached rates from session if available, otherwise load from DB
@@ -148,21 +153,36 @@ function handle_create(): void
             $manager->loadFromDB();
         }
 
-        $service = new BudgetGeneratorService($manager);
-        error_log("QuickBudget DEBUG: Calling generate(targetYear=$targetYear, startMonth=$startMonth, scenarioId=$scenarioId)");
+        $service = new BudgetGeneratorService($manager, $logger);
         $entries = $service->generate($targetYear, $startMonth, $scenarioId);
-        error_log("QuickBudget DEBUG: Generated " . count($entries) . " entries");
 
         // FR-14: Save to FA native budget tables
         $saved = $service->saveToFABudget($entries, $path_to_root);
 
         $message = 'Budget generated for ' . count($entries) . ' GL accounts, saved ' . $saved . ' entries';
-        
+
         // Verify actual DB rows
         $verify = db_query("SELECT COUNT(*) as cnt FROM " . TB_PREF . "budget_trans WHERE YEAR(tran_date) = " . (int)$targetYear);
         $verifyRow = db_fetch_assoc($verify);
-        error_log("QuickBudget verify: DB shows " . $verifyRow['cnt'] . " entries for year $targetYear");
-        $msg = urlencode($message);
+
+        // Log verification with sample rows
+        $logger->logInfo("");
+        $logger->logSeparator();
+        // Log sample rows
+        $sampleSql = "SELECT account, tran_date, amount FROM " . TB_PREF . "budget_trans WHERE YEAR(tran_date) = " . (int)$targetYear . " ORDER BY account, tran_date LIMIT 10";
+        $sampleResult = db_query($sampleSql);
+        $sampleRows = [];
+        while ($srow = db_fetch_assoc($sampleResult)) {
+            $sampleRows[] = $srow;
+        }
+        $logger->logVerification($targetYear, (int)$verifyRow['cnt'], $sampleRows);
+
+        $logger->logInfo("");
+        $logger->logInfo("Log file: " . $logger->getLogPath());
+        $logger->close();
+
+        error_log("QuickBudget: $message - verify=" . $verifyRow['cnt'] . " rows - log=" . $logger->getLogPath());
+        $msg = urlencode($message . " (log: " . basename($logger->getLogPath()) . ")");
         echo "<html><head><meta http-equiv='refresh' content='0;url=quickbudget.php?message=$msg'></head></html>";
         exit;
     } catch (\Exception $e) {
