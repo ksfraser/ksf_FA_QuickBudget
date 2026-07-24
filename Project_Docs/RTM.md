@@ -1,8 +1,8 @@
 # Requirements Traceability Matrix — ksf_FA_QuickBudget
 
-**Version:** 1.0.0
-**Date:** 2026-06-17
-**Status:** Draft
+**Version:** 1.1.0
+**Date:** 2026-07-14
+**Status:** Active
 
 ---
 
@@ -33,42 +33,44 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | BR-02 | Apply configurable inflation factors to expense budgets | `InflationFactorManager` | TBD | UAT-02 | Implemented |
 | BR-03 | Support flexible time periods for budget creation | `quickbudget.php` start_month selector | TBD | UAT-01, UAT-02 | Implemented |
 | BR-04 | Integrate with native FA budget reporting | `0_ksf_quickbudget_budget` table | TBD | UAT-05 | Partial |
-| BR-05 | Inflation factors follow 4-level hierarchy: Global → Type → Category → GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
+| BR-05 | Inflation factors follow 4-level hierarchy: Global -> Type -> Category -> GL | `InflationFactorManager::getRateForAccount()` | `InflationFactorManagerTest` | UAT-03 | Implemented |
 | BR-06 | Prompt user on partial-year recreation for completed months | `handle_create()` prompt flag | TBD | UAT-02 | Implemented |
 | BR-07 | Budget generation uses native FA budget tables | `saveToFABudget()` to custom tables | TBD | UAT-01 | Implemented |
 | BR-08 | Optional approval workflow configurable per company | `quickbudget_approve.php` | TBD | UAT-06 | Implemented |
 | BR-09 | Scenario multipliers enable what-if analysis | `quickbudget.php` scenario selector | TBD | UAT-04 | Implemented |
+| BR-10 | Calculate apparent historical inflation from GL actuals at all hierarchy levels | `InflationCalculator` service | TBD | UAT-08 | Not Started |
+| BR-11 | Display multi-year trends with charts and allow transfer of observed rates to config | `quickbudget_report.php` rewrite + Chart.js | TBD | UAT-08 | Not Started |
 
 ---
 
 ## 4. Functional Requirements
 
-### FR-01–FR-07: Inflation Factor Configuration
+### FR-01-FR-07: Inflation Factor Configuration
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
-| FR-01 | Configure global inflation factor as default percentage | `FactorTypes::GLOBAL` + `InflationFactorManager.php::setGlobalRate()` | `tests/unit/InflationFactorManagerTest.php::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
-| FR-02 | Configure category-level inflation factors (Assets, Income, COGS, Expenses) | `CategoryDAO::getAllCategories()` queries chart_class + `FactorTypes::CATEGORY` | `tests/unit/InflationFactorManagerTest.php::testGetRateReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
-| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `TypeDAO::getAllTypes()` queries chart_types + `FactorTypes::TYPE` | `tests/unit/InflationFactorManagerTest.php::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
-| FR-04 | Configure GL-specific inflation factors (chart_master.account_code) | `GLAccountDAO::getAllGLAccounts()` queries chart_master + `FactorTypes::GL` | `tests/unit/InflationFactorManagerTest.php::testSetGLRateStoresGLRate` | UAT-03 | Implemented |
+| FR-01 | Configure global inflation factor as default percentage | `FactorTypes::GLOBAL` + `InflationFactorManager.php::setGlobalRate()` | `InflationFactorManagerTest::testGetDefaultRateReturnsConfiguredGlobalRate` | UAT-03 | Implemented |
+| FR-02 | Configure category-level inflation factors (Assets, Income, COGS, Expenses) | `CategoryDAO::getAllCategories()` queries chart_class + `FactorTypes::CATEGORY` | `InflationFactorManagerTest::testGetRateReturnsCategoryRateWhenNoGLSpecific` | UAT-03 | Implemented |
+| FR-03 | Configure type-level inflation factors (chart_types.name/id) | `TypeDAO::getAllTypes()` queries chart_types + `FactorTypes::TYPE` | `InflationFactorManagerTest::testSetTypeRateStoresTypeRate` | UAT-03 | Implemented |
+| FR-04 | Configure GL-specific inflation factors (chart_master.account_code) | `GLAccountDAO::getAllGLAccounts()` queries chart_master + `FactorTypes::GL` | `InflationFactorManagerTest::testSetGLRateStoresGLRate` | UAT-03 | Implemented |
 | FR-05 | Import inflation factors from CSV with GL account, category, and rate columns | `InflationFactorRepository::importFromCsv()` + factor type constants | TBD | UAT-03 | Implemented |
 | FR-06 | Save inflation factor configurations | `InflationFactorRepository::save()` + `FactorTypes` constants | TBD | UAT-03 | Implemented |
 | FR-07 | Export inflation factor configurations to CSV | `InflationFactorRepository::exportToCsv()` | TBD | UAT-03 | Implemented |
 
-### FR-08–FR-15: Budget Creation
+### FR-08-FR-15: Budget Creation
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
-| FR-07 | Select target budget period (12-month window) with start month | `pages/quickbudget.php` form | TBD | UAT-01 | Implemented |
-| FR-08 | Select source period for actuals (prior year same months) | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
-| FR-09 | Calculate budget amounts applying inflation factors to GL actuals | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
-| FR-10 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::getGLAccountsWithActuals()` returns only accounts with actuals | TBD | UAT-01 | Implemented |
-| FR-11 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
-| FR-12 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
-| FR-13 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector, `BudgetGeneratorService::getAccountType()` inverse logic, balance sheet bypass | TBD | UAT-04 | Implemented (income inverse, balance sheet unchanged) |
-| FR-14 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
+| FR-08 | Select target budget period (12-month window) with start month | `pages/quickbudget.php` form | TBD | UAT-01 | Implemented |
+| FR-09 | Select source period for actuals (prior year same months) | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
+| FR-10 | Calculate budget amounts applying inflation factors to GL actuals | `BudgetGeneratorService::generate()` | TBD | UAT-01 | Implemented |
+| FR-11 | Skip GL accounts with no actuals in source period | `BudgetGeneratorService::getGLAccountsWithActuals()` returns only accounts with actuals | TBD | UAT-01 | Implemented |
+| FR-12 | Validate source period has completed actuals before generating | `pages/quickbudget.php::get_completed_months_for_year()` | TBD | UAT-02 | Implemented |
+| FR-13 | Prompt user on partial-year recreation: use actuals or preserve | `pages/quickbudget.php::handle_create()` returns prompt flag | TBD | UAT-02 | Implemented |
+| FR-14 | Support scenario multipliers for what-if analysis | `pages/quickbudget.php` scenario selector, `BudgetGeneratorService::getAccountType()` inverse logic, balance sheet bypass | TBD | UAT-04 | Implemented |
+| FR-15 | Generate budgets using native FA budget tables | `BudgetGeneratorService::saveToFABudget()` | TBD | UAT-01 | Implemented |
 
-### FR-16–FR-20: Budget Comparison
+### FR-16-FR-20: Budget Comparison
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
@@ -78,7 +80,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-19 | Filter comparison by GL account range | `pages/quickbudget_compare.php` form | TBD | UAT-05 | Implemented |
 | FR-20 | Color-code variances (green/red) | `pages/quickbudget_compare.php` CSS | TBD | UAT-05 | Implemented |
 
-### FR-21–FR-25: Budget Approval
+### FR-21-FR-25: Budget Approval
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
@@ -88,7 +90,7 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-24 | Approve button visible to MANAGE permission only | $page_security = 'SA_KSF_QUICKBUDGETMANAGE' | TBD | UAT-06 | Implemented |
 | FR-25 | Send notification on budget approval/rejection | `pages/quickbudget_approve.php` (placeholder) | TBD | UAT-06 | Implemented |
 
-### FR-26–FR-29: Budget Export
+### FR-26-FR-29: Budget Export
 
 | Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
 |--------|-------------|----------------|-----------|----------|--------|
@@ -97,15 +99,41 @@ This RTM traces each business requirement (BR) and functional requirement (FR) t
 | FR-28 | Include all 12 months of budget data | `pages/quickbudget.php::handle_export()` | TBD | UAT-07 | Implemented |
 | FR-29 | Include variance columns in export | `pages/quickbudget_compare.php::handle_export()` | TBD | UAT-07 | Implemented |
 
+### FR-37-FR-57: Historical Inflation Analysis (Issue #2)
+
+| Req ID | Requirement | Implementation | Unit Test | UAT Case | Status |
+|--------|-------------|----------------|-----------|----------|--------|
+| FR-37 | Calculate YoY inflation for each GL account from gl_trans | `src/Service/InflationCalculator::calculateForGL()` | TBD | UAT-08 | Not Started |
+| FR-38 | Calculate YoY inflation at category level | `InflationCalculator::calculateForCategory()` | TBD | UAT-08 | Not Started |
+| FR-39 | Calculate YoY inflation at class level | `InflationCalculator::calculateForClass()` | TBD | UAT-08 | Not Started |
+| FR-40 | Use all available historical data | `InflationCalculator` queries all distinct years from gl_trans | TBD | UAT-08 | Not Started |
+| FR-41 | Show 1/3/5/7/10 year trend indicators | `InflationCalculator::getTrendIndicators()` | TBD | UAT-08 | Not Started |
+| FR-42 | Compute mean, median, mode, min, max, std dev | `src/Service/InflationStats` | TBD | UAT-08 | Not Started |
+| FR-43 | Compute trend slope via linear regression | `InflationStats::getTrendSlope()` | TBD | UAT-08 | Not Started |
+| FR-44 | Exclude GL accounts with no data from averages | `InflationCalculator` filters null values before aggregation | TBD | UAT-08 | Not Started |
+| FR-45 | Display tabular year-by-year data | `pages/quickbudget_report.php` rewrite | TBD | UAT-08 | Not Started |
+| FR-46 | Display charts using Chart.js | `assets/inflation_charts.js` + `pages/quickbudget_inflation_api.php` | TBD | UAT-08 | Not Started |
+| FR-47 | Context display (GL->category, category->class) | `pages/quickbudget_report.php` context section | TBD | UAT-08 | Not Started |
+| FR-48 | Flag items within plus/minus 1 std dev of parent | `InflationStats::isWithinNorm()` | TBD | UAT-08 | Not Started |
+| FR-49 | Filter by GL/category/class/ALL | `pages/quickbudget_report.php` filter form | TBD | UAT-08 | Not Started |
+| FR-50 | Tabular and chart display modes | `pages/quickbudget_report.php` view toggle | TBD | UAT-08 | Not Started |
+| FR-51 | Transfer with preview diff | `pages/quickbudget_inflation_transfer.php` | TBD | UAT-08 | Not Started |
+| FR-52 | Bulk transfer for all items at a level | `pages/quickbudget_inflation_transfer.php` bulk mode | TBD | UAT-08 | Not Started |
+| FR-53 | Transfer selector (1/3/5/7/10yr, mean, median, mode) | `pages/quickbudget_inflation_transfer.php` stat selector | TBD | UAT-08 | Not Started |
+| FR-54 | Print to PDF | `pages/quickbudget_inflation_pdf.php` | TBD | UAT-08 | Not Started |
+| FR-55 | Cache computed rates in inflation_history table | `InflationCalculator` writes to `0_ksf_quickbudget_inflation_history` | TBD | UAT-08 | Not Started |
+| FR-56 | Chart data JSON endpoint | `pages/quickbudget_inflation_api.php` | TBD | UAT-08 | Not Started |
+| FR-57 | Transfer endpoint | `pages/quickbudget_inflation_transfer.php` | TBD | UAT-08 | Not Started |
+
 ---
 
 ## 5. Traceability Summary
 
 | Category | Total Reqs | Fully Traced | Partial (test gap) | Not Started |
 |----------|-----------|-------------|-------------------|-------------|
-| Business Requirements | 9 | 8 | 1 | 0 |
-| Functional Requirements | 36 | 36 | 0 | 0 |
-| **Total** | **45** | **44** | **1** | **0** |
+| Business Requirements | 11 | 8 | 1 | 2 |
+| Functional Requirements | 45 | 30 | 6 | 19 |
+| **Total** | **56** | **38** | **7** | **21** |
 
 ---
 

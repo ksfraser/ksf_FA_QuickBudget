@@ -1,7 +1,7 @@
 # Use Cases — ksf_FA_QuickBudget
 
-**Version:** 1.0.0
-**Date:** 2026-06-16
+**Version:** 1.1.0
+**Date:** 2026-07-14
 **Status:** Active
 
 ---
@@ -10,7 +10,7 @@
 
 | Actor | Description |
 |-------|-------------|
-| **Comptroller** | Staff user with Financials access  |
+| **Comptroller** | Staff user with Financials access |
 | **FA Administrator** | Configures module, security areas, and calendar sources |
 
 ---
@@ -43,7 +43,7 @@
 5. Module calculates budget entries for every GL using module variables.
 6. Budget created
 
-**Alternate Flow — Recreating Current Year:**
+**Alternate Flow - Recreating Current Year:**
 - Recreate budget entries only for months that have not completed. e.g. recreate in June, only recalculate for June, July, August...December
 - Prompt user whether to use actuals for completed months or preserve existing budget entries
 
@@ -66,7 +66,7 @@
 7. Admin sets GL-specific inflation factors (overrides category and global)
 8. Admin saves configuration (stored as company preferences)
 
-**Alternate Flow — Import from CSV:**
+**Alternate Flow - Import from CSV:**
 1. Admin clicks "Import" button
 2. Admin uploads CSV with GL accounts, categories, and rates
 3. System validates and imports data
@@ -83,7 +83,7 @@
 1. User opens `quickbudget.php`
 2. User selects scenario multiplier (baseline=1.0, optimistic=0.9, pessimistic=1.1)
 3. User launches Budget Creation
-4. Module calculates budget using (actuals × inflation × scenario) formula
+4. Module calculates budget using (actuals x inflation x scenario) formula
 5. Budget created with scenario tag for filtering
 
 ---
@@ -130,3 +130,53 @@
 5. System prompts download of generated file
 
 ---
+
+## UC-08: Analyze Historical Inflation (Issue #2)
+
+**Actor:** Comptroller
+**Trigger:** Need to understand historical inflation trends for budget planning
+
+**Preconditions:** User has SA_KSF_QUICKBUDGETVIEW permission; at least 2 years of gl_trans data
+
+**Main Flow:**
+1. User opens `quickbudget_report.php`
+2. User selects filter: specific GL, all GLs, specific category, all categories, specific class, all classes, or ALL
+3. System calculates YoY inflation for each item in the filter scope using all available historical data
+4. System displays summary statistics: mean, median, mode, min, max, standard deviation
+5. System displays 1/3/5/7/10 year trend indicators for each item
+6. User toggles between tabular and chart display modes
+
+**Tabular View:**
+7a. System shows year-by-year rows: Year, Prior Actual, Current Actual, YoY Rate, Status (normal/high/low)
+7b. Each row has a "Transfer" button for pushing that observed rate to config
+
+**Chart View:**
+7b. System renders Chart.js line chart of YoY rates over time with mean/median/std dev bands
+7c. System renders bar chart of distribution across all items in scope
+
+**Context Display:**
+8. When viewing a specific GL, system shows its parent category's 1/3/5/7/10/mean/median/mode stats below
+9. When viewing a specific category, system shows its parent class stats below
+10. System flags whether each item is within +/- 1 std dev of its parent group
+
+**Transfer to Config:**
+11. User clicks "Transfer" on an item or selects bulk transfer for all items
+12. System shows preview diff: current configured rate vs observed rate
+13. User confirms transfer
+14. System writes observed rate to `0_ksf_quickbudget_factors` for the selected level
+15. System invalidates the resolved type rate cache
+
+**Bulk Transfer:**
+16. User selects bulk transfer for all items at a level
+17. User selects which statistic to transfer: 1yr, 3yr, 5yr, 7yr, 10yr, mean, median, or mode
+18. System shows preview diff for all affected items
+19. User confirms; system writes all rates
+
+**PDF Export:**
+20. User clicks "Print to PDF"
+21. System generates PDF with current filter, tabular + chart views
+22. System prompts download
+
+**Alternate Flow - No Data:**
+- If a GL has no historical data, it is excluded from the display and from statistical averages
+- Category and class aggregations still include other GLs that do have data

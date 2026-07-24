@@ -1,7 +1,7 @@
 # Functional Requirements — ksf_FA_QuickBudget
 
-**Version:** 1.0.0
-**Date:** 2026-06-17
+**Version:** 1.1.0
+**Date:** 2026-07-14
 **Status:** Active
 
 ---
@@ -70,7 +70,33 @@
 
 ---
 
-## 6. Security
+## 6. Historical Inflation Analysis (Issue #2)
+
+| ID | Requirement | Source Use Case |
+|----|-------------|-----------------|
+| FR-37 | Calculate year-over-year inflation for each GL account from `gl_trans` actuals | UC-08 |
+| FR-38 | Calculate year-over-year inflation aggregated at category level (`chart_class`) | UC-08 |
+| FR-39 | Calculate year-over-year inflation aggregated at class level (`chart_class` class grouping) | UC-08 |
+| FR-40 | Use all available historical data; no artificial year cap | UC-08 |
+| FR-41 | Show 1/3/5/7/10 year trend indicators for each GL, category, and class | UC-08 |
+| FR-42 | Compute statistics: mean, median, mode, min, max, standard deviation | UC-08 |
+| FR-43 | Compute trend slope via linear regression over available years | UC-08 |
+| FR-44 | Exclude GL accounts with no data from statistical averages | UC-08 |
+| FR-45 | Display tabular year-by-year data: Year, Prior Actual, Current Actual, YoY Rate, Status | UC-08 |
+| FR-46 | Display charts (line, bar) using Chart.js for selected item and distribution | UC-08 |
+| FR-47 | Context display: when viewing a GL show its category stats; when viewing a category show its class stats | UC-08 |
+| FR-48 | Flag whether a GL/category is within plus/minus 1 std dev of its parent group | UC-08 |
+| FR-49 | Filter by: specific GL, all GLs, specific category, all categories, specific class, all classes, ALL | UC-08 |
+| FR-50 | Provide both tabular and chart display modes | UC-08 |
+| FR-51 | Transfer observed rate to config for a single item (GL/category/class) with preview diff before commit | UC-08 |
+| FR-52 | Bulk transfer observed rates for all items at a selected level | UC-08 |
+| FR-53 | Transfer selector: choose 1yr, 3yr, 5yr, 7yr, 10yr value, mean, median, or mode | UC-08 |
+| FR-54 | Print to PDF with filter selection (specific item or ALL), tabular + chart | UC-08 |
+| FR-55 | Cache computed historical rates in `0_ksf_quickbudget_inflation_history` table | UC-08 |
+
+---
+
+## 7. Security
 
 | ID | Requirement | Source |
 |----|-------------|--------|
@@ -80,7 +106,7 @@
 
 ---
 
-## 7. AJAX/API Endpoints
+## 8. AJAX/API Endpoints
 
 | ID | Endpoint | Purpose |
 |----|----------|---------|
@@ -88,3 +114,5 @@
 | FR-34 | POST /quickbudget.php?action=create | Generate and save budget |
 | FR-35 | POST /quickbudget.php?action=compare | Get actuals vs budget comparison data |
 | FR-36 | POST /quickbudget.php?action=export | Export budget/actuals CSV |
+| FR-56 | GET /quickbudget_inflation_api.php | Chart data JSON endpoint for historical inflation |
+| FR-57 | POST /quickbudget_inflation_transfer.php | Transfer observed rate to config (single or bulk) |
