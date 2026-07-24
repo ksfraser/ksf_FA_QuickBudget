@@ -282,9 +282,12 @@ final class BudgetGeneratorService
 
         $sql = "SELECT account_name FROM " . TB_PREF . "chart_master
             WHERE account_code = '" . safe_escape($db, $accountCode) . "'";
-        $result = db_query($sql, null);
-        if ($result && $row = db_fetch_assoc($result)) {
-            return $row['account_name'];
+        $result = @db_query($sql, null);
+        if ($result) {
+            $row = db_fetch_assoc($result);
+            if ($row && isset($row['account_name'])) {
+                return $row['account_name'];
+            }
         }
         return $accountCode;
     }
