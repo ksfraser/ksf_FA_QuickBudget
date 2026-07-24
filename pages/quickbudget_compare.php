@@ -125,11 +125,11 @@ function handle_data(): void
 
     $actuals = [];
     $variance = [];
-    $sql = "SELECT account_code as gl_account, SUM(amount) as actual_total
+    $sql = "SELECT account as gl_account, SUM(amount) as actual_total
         FROM " . TB_PREF . "gl_trans
         WHERE YEAR(tran_date) = " . (int)$year . "
         AND MONTH(tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . "
-        GROUP BY account_code";
+        GROUP BY account";
     $actualResult = db_query($sql, null);
 
     while ($row = db_fetch_assoc($actualResult)) {
@@ -158,7 +158,7 @@ function handle_export(): void
     $sql = "SELECT bt.account as gl_account, 
             SUM(bt.amount) as budget_total,
             (SELECT SUM(gt.amount) FROM " . TB_PREF . "gl_trans gt 
-             WHERE gt.account_code = bt.account 
+             WHERE gt.account = bt.account 
              AND YEAR(gt.tran_date) = " . (int)$year . "
              AND MONTH(gt.tran_date) BETWEEN " . (int)$startMonth . " AND " . (int)$endMonth . ") as actual_total
         FROM " . TB_PREF . "budget_trans bt
