@@ -102,6 +102,7 @@ function render_filter_bar(): void
     echo "<div class='col-md-3 mt-4'>";
     echo "<input type='submit' class='btn btn-primary btn-sm' value='" . _("Generate") . "'> ";
     echo "<a href='quickbudget_report.php' class='btn btn-secondary btn-sm'>" . _("Reset") . "</a>";
+    echo "<a id='print-pdf-btn' href='quickbudget_inflation_pdf.php?level=" . htmlspecialchars($level) . "&reference_id=" . htmlspecialchars($referenceId) . "' target='_blank' class='btn btn-outline-primary btn-sm'>" . _("Print to PDF") . "</a>";
     echo "</div>";
 
     echo "</div>"; // row

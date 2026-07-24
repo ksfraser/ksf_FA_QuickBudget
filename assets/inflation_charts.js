@@ -368,4 +368,82 @@
         var match = window.location.search.match(/reference_id=([^&]+)/);
         return match ? decodeURIComponent(match[1]) : '';
     }
+
+    // =========================================================================
+    // TRANSFER EVENT HANDLERS
+    // =========================================================================
+
+    document.addEventListener('click', function(e) {
+        // Single transfer button
+        if (e.target.classList.contains('transfer-btn')) {
+            var btn = e.target;
+            var level = btn.getAttribute('data-level');
+            var ref = btn.getAttribute('data-reference');
+            var year = btn.getAttribute('data-year') || '';
+            var stat = btn.getAttribute('data-stat') || '';
+
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'quickbudget_inflation_transfer.php?action=preview';
+
+            var fields = { level: level, reference_id: ref };
+            if (year) fields.year = year;
+            if (stat) fields.stat = stat;
+
+            for (var key in fields) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+
+        // Bulk transfer button
+        if (e.target.id === 'bulk-transfer-btn' && currentData) {
+            var items = currentData.items;
+            if (!items || items.length === 0) return;
+
+            var level = getLevelFromUrl();
+            var itemRates = {};
+
+            items.forEach(function(item) {
+                if (item.stats && item.stats.mean !== null) {
+                    itemRates[item.id] = item.stats.mean * 100;
+                }
+            });
+
+            if (Object.keys(itemRates).length === 0) return;
+
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'quickbudget_inflation_transfer.php?action=bulk_preview';
+
+            var levelInput = document.createElement('input');
+            levelInput.type = 'hidden';
+            levelInput.name = 'level';
+            levelInput.value = level;
+            form.appendChild(levelInput);
+
+            var statInput = document.createElement('input');
+            statInput.type = 'hidden';
+            statInput.name = 'stat';
+            statInput.value = 'mean';
+            form.appendChild(statInput);
+
+            var ratesInput = document.createElement('input');
+            ratesInput.type = 'hidden';
+            ratesInput.name = 'item_rates_json';
+            ratesInput.value = JSON.stringify(itemRates);
+            form.appendChild(ratesInput);
+
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+    });
 })();
