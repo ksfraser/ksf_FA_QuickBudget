@@ -35,7 +35,7 @@ Methods:
 - `calculateForClass(string $classId): array`
 - `calculateAll(string $level): array`
 - `getAvailableYears(): array` — distinct years from gl_trans
-- `getTrendIndicators(array $yearlyData): array` — 1/3/5/7/10yr values
+- `getTrendIndicators(array $yearlyData): array` — 1/3/5/7/10yr CAGR values
 
 Data source: `0_gl_trans` grouped by account + year.
 Null handling: exclude from averages (FR-44).
