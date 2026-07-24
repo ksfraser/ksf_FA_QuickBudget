@@ -45,8 +45,6 @@ function render_view(): void
 {
     global $path_to_root;
 
-    include_once($path_to_root . "/includes/ui/items_cart.inc");
-    include_once($path_to_root . "/admin/db/chart_db.inc");
 
     page(_("Quick Budget"), false, false, '', '');
 
